@@ -31,16 +31,100 @@ void HeatMapPlugin::init()
 {
     _heatmap->setPage(":/heatmap/heatmap.html", "qrc:/heatmap/");
 
-    auto layout = new QVBoxLayout();
+    setDockingLocation(DockableWidget::DockingLocation::Right);
+    setFocusPolicy(Qt::ClickFocus);
 
-    layout->setMargin(0);
-    layout->setSpacing(0);
-    layout->addWidget(_heatmap);
+    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(this, "No data loaded", "Drag an item from the data hierarchy and drop it here to visualize data..."));
+    _dropWidget->initialize([this](const QMimeData* mimeData) -> gui::DropWidget::DropRegions {
+        gui::DropWidget::DropRegions dropRegions;
+        
+        const auto mimeText = mimeData->text();
+        const auto tokens = mimeText.split("\n");
 
-    setLayout(layout);
+        if (tokens.count() == 1)
+            return dropRegions;
+
+        const auto datasetName = tokens[0];
+        const auto dataType = DataType(tokens[1]);
+        const auto dataTypes = DataTypes({ PointType, ClusterType });
+        const auto currentDatasetName = _points.getDatasetName();
+
+        if (!dataTypes.contains(dataType))
+            dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", false);
+
+        if (dataType == PointType) {
+            const auto candidateDataset = _core->requestData<Points>(datasetName);
+            const auto candidateDatasetName = candidateDataset.getName();
+            const auto description = QString("Visualize %1 as points or density/contour map").arg(candidateDatasetName);
+
+            if (!_points.isValid()) {
+                dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, true, [this, candidateDatasetName]() {
+                    _points.setDatasetName(candidateDatasetName);
+                });
+            }
+            else {
+                if (candidateDatasetName == currentDatasetName) {
+                    dropRegions << new gui::DropWidget::DropRegion(this, "Warning", "Data already loaded", false);
+                }
+                else {
+                    const auto points = _core->requestData<Points>(currentDatasetName);
+
+                    if (points.getNumPoints() != candidateDataset.getNumPoints()) {
+                        dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, true, [this, candidateDatasetName]() {
+                            _points.setDatasetName(candidateDatasetName);
+                        });
+                    }
+                    else {
+                        dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, true, [this, candidateDatasetName]() {
+                            _points.setDatasetName(candidateDatasetName);
+                        });
+                    }
+                }
+            }
+        }
+
+        //if (dataType == ClusterType) {
+        //    const auto candidateDataset = _core->requestData<Clusters>(datasetName);
+        //    const auto candidateDatasetName = candidateDataset.getName();
+        //    const auto description = QString("Color points by %1").arg(candidateDatasetName);
+
+        //    if (_points.isValid()) {
+        //        if (candidateDatasetName == _colors.getDatasetName()) {
+        //            dropRegions << new gui::DropWidget::DropRegion(this, "Color", "Cluster set is already in use", false, [this]() {});
+        //        }
+        //        else {
+        //            dropRegions << new gui::DropWidget::DropRegion(this, "Color", description, true, [this, candidateDatasetName]() {
+        //                _colors.setDatasetName(candidateDatasetName);
+        //            });
+        //        }
+        //    }
+        //}
+
+        return dropRegions;
+    });
+
+    const auto updateWindowTitle = [this]() -> void {
+        if (!_points.isValid())
+            setWindowTitle(getGuiName());
+        else
+            setWindowTitle(QString("%1: %2").arg(getGuiName(), _points.getDatasetName()));
+    };
+
+    // Load points when the dataset name of the points dataset reference changes
+    connect(&_points, &DatasetRef<Points>::datasetNameChanged, this, [this, updateWindowTitle](const QString& oldDatasetName, const QString& newDatasetName) {
+        //loadPoints(newDatasetName);
+        updateWindowTitle();
+    });
 
     connect(_heatmap, SIGNAL(clusterSelectionChanged(QList<int>)), SLOT(clusterSelected(QList<int>)));
     connect(_heatmap, SIGNAL(dataSetPicked(QString)), SLOT(dataSetPicked(QString)));
+
+    // Add widgets to plugin layout
+    auto layout = new QVBoxLayout();
+    layout->setMargin(0);
+    layout->setSpacing(0);
+    layout->addWidget(_heatmap);
+    setLayout(layout);
 }
 
 void HeatMapPlugin::onDataEvent(hdps::DataEvent* dataEvent)
