@@ -13,6 +13,7 @@ using namespace hdps::plugin;
 using namespace hdps::util;
 
 class Points;
+class Clusters;
 
 // =============================================================================
 // View
@@ -47,6 +48,7 @@ private:
     void updateData();
 
     DatasetRef<Points>              _points;        /** Currently loaded points dataset */
+    DatasetRef<Clusters>            _clusters;      /** Currently loaded clusters dataset */
 
     HeatMapWidget*                  _heatmap;       /** Heatmap widget displaying cluster data */
     hdps::gui::DropWidget*          _dropWidget;    /** Widget allowing users to drop in data */

@@ -37,6 +37,9 @@ HeatMapWidget::HeatMapWidget()
     Q_INIT_RESOURCE(heatmap_resources);
     _communicationObject = new HeatMapCommunicationObject(this);
     init(_communicationObject);
+
+    setAcceptDrops(true);
+    setMouseTracking(true);
 }
 
 HeatMapWidget::~HeatMapWidget()
@@ -50,11 +53,6 @@ void HeatMapWidget::addDataOption(const QString option)
         emit _communicationObject->qt_addAvailableData(option);
     else
         dataOptionBuffer.append(option);
-}
-
-QString HeatMapWidget::getCurrentData() const
-{
-    return _currentData;
 }
 
 void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numDimensions)
@@ -142,8 +140,6 @@ void HeatMapWidget::initWebPage()
 
 void HeatMapWidget::js_selectData(QString name)
 {
-    _currentData = name;
-
     emit dataSetPicked(name);
 }
 
