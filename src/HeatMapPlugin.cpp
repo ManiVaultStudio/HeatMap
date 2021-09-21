@@ -1,15 +1,26 @@
 #include "HeatMapPlugin.h"
 
-#include "ClustersPlugin.h"
+#include "PointData.h"
+#include "ClusterData.h"
 
 #include <QtCore>
 #include <QtDebug>
 
 Q_PLUGIN_METADATA(IID "nl.tudelft.HeatMapPlugin")
 
+using namespace hdps;
+
 // =============================================================================
 // View
 // =============================================================================
+
+HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
+    ViewPlugin(factory),
+    _dropWidget(nullptr)
+{
+    _heatmap = new HeatMapWidget();
+    _dropWidget = new gui::DropWidget(_heatmap);
+}
 
 HeatMapPlugin::~HeatMapPlugin(void)
 {
@@ -18,41 +29,49 @@ HeatMapPlugin::~HeatMapPlugin(void)
 
 void HeatMapPlugin::init()
 {
-    heatmap = new HeatMapWidget();
-    heatmap->setPage(":/heatmap/heatmap.html", "qrc:/heatmap/");
+    _heatmap->setPage(":/heatmap/heatmap.html", "qrc:/heatmap/");
 
-    addWidget(heatmap);
+    auto layout = new QVBoxLayout();
 
-    connect(heatmap, SIGNAL(clusterSelectionChanged(QList<int>)), SLOT(clusterSelected(QList<int>)));
-    connect(heatmap, SIGNAL(dataSetPicked(QString)), SLOT(dataSetPicked(QString)));
+    layout->setMargin(0);
+    layout->setSpacing(0);
+    layout->addWidget(_heatmap);
+
+    setLayout(layout);
+
+    connect(_heatmap, SIGNAL(clusterSelectionChanged(QList<int>)), SLOT(clusterSelected(QList<int>)));
+    connect(_heatmap, SIGNAL(dataSetPicked(QString)), SLOT(dataSetPicked(QString)));
 }
 
-void HeatMapPlugin::dataAdded(const QString name)
+void HeatMapPlugin::onDataEvent(hdps::DataEvent* dataEvent)
 {
-    heatmap->addDataOption(name);
-    qDebug() << "Heatmap Data added";
-}
+    // Event which gets triggered when a dataset is added to the system.
+    if (dataEvent->getType() == EventType::DataAdded)
+    {
+        _heatmap->addDataOption(dataEvent->dataSetName);
+    }
+    // Event which gets triggered when the data contained in a dataset changes.
+    if (dataEvent->getType() == EventType::DataChanged)
+    {
+        updateData();
+    }
+    // Event which gets triggered when a dataset is removed from the system.
+    if (dataEvent->getType() == EventType::DataRemoved)
+    {
+        // Request the point data that has been removed for further processing
+        const Points& removedSet = _core->requestData<Points>(dataEvent->dataSetName);
 
-void HeatMapPlugin::dataChanged(const QString name)
-{
-    updateData();
-}
+        // ...
+    }
+    // Event which gets triggered when the selection associated with a dataset changes.
+    if (dataEvent->getType() == EventType::SelectionChanged)
+    {
+        // Request the point data associated with the changed selection, and retrieve the selection from it
+        const Points& changedDataSet = _core->requestData<Points>(dataEvent->dataSetName);
+        const hdps::DataSet& selectionSet = changedDataSet.getSelection();
 
-void HeatMapPlugin::dataRemoved(const QString name)
-{
-    
-}
-
-void HeatMapPlugin::selectionChanged(const QString dataName)
-{
-
-}
-
-QStringList HeatMapPlugin::supportedDataKinds()
-{
-    QStringList supportedKinds;
-    supportedKinds << "Clusters";
-    return supportedKinds;
+        // ...
+    }
 }
 
 void HeatMapPlugin::dataSetPicked(const QString& name)
@@ -66,42 +85,36 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
     qDebug() << "CLUSTER SELECTION";
     qDebug() << selectedClusters;
     
-    ClusterSet& clusterSet = (ClusterSet&) _core->requestSet(heatmap->getCurrentData());
+    Clusters& clusters = _core->requestData<Clusters>(_heatmap->getCurrentData());
+    Clusters& selection = static_cast<Clusters&>(clusters.getSelection());
+    selection.indices.clear();
 
-    const ClustersPlugin& clusterPlugin = clusterSet.getData();
-
-    IndexSet* selection = nullptr;
-
-    int numClusters = clusterPlugin.clusters.size();
+    int numClusters = clusters.getClusters().size();
     for (int i = 0; i < numClusters; i++)
     {
-        IndexSet* cluster = clusterPlugin.clusters[i];
-        if (!selection) {
-            selection = &dynamic_cast<IndexSet&>(_core->requestSelection(cluster->getDataName()));
-            selection->indices.clear();
-        }
-        
+        Cluster& cluster = clusters.getClusters()[i];
+
         if (selectedClusters[i]) {
-            selection->indices.insert(selection->indices.end(), cluster->indices.begin(), cluster->indices.end());
-            _core->notifySelectionChanged(selection->getDataName());
+            selection.indices.insert(selection.indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
+            _core->notifySelectionChanged(clusters.getName());
         }
     }
 }
 
 void HeatMapPlugin::updateData()
 {
-    QString currentData = heatmap->getCurrentData();
+    if (!_points.isValid())
+        return;
+
+    QString currentData = _heatmap->getCurrentData();
 
     qDebug() << "Working on data: " << currentData;
     qDebug() << "Attempting cast to ClusterSet";
-    ClusterSet& clusterSet = (ClusterSet&) _core->requestSet(currentData);
-
-    qDebug() << "Requesting plugin";
-    const ClustersPlugin& clusterPlugin = clusterSet.getData();
-
+    Clusters& clusterSet = _core->requestData<Clusters>(currentData);
+    
     qDebug() << "Calculating data";
 
-    int numClusters = clusterPlugin.clusters.size();
+    int numClusters = clusterSet.getClusters().size();
     int numDimensions = 1;
 
     std::vector<Cluster> clusters;
@@ -109,50 +122,64 @@ void HeatMapPlugin::updateData()
     qDebug() << "Initialize clusters" << numClusters;
     // For every cluster initialize the median, mean, and stddev vectors with the number of dimensions
     for (int i = 0; i < numClusters; i++) {
-        IndexSet* cluster = clusterPlugin.clusters[i];
-
-        const PointsPlugin& points = cluster->getData();
-
-        numDimensions = points.getNumDimensions();
+        Cluster& cluster = clusterSet.getClusters()[i];
+                
+        numDimensions = _points->getNumDimensions();
         qDebug() << "Num dimensions: " << numDimensions;
-        clusters[i]._median.resize(numDimensions);
-        clusters[i]._mean.resize(numDimensions);
-        clusters[i]._stddev.resize(numDimensions);
 
         // Cluster statistics
+        auto& means = cluster.getMean();
+        auto& stddevs = cluster.getStandardDeviation();
+
+        means.resize(numDimensions);
+        stddevs.resize(numDimensions);
+
         for (int d = 0; d < numDimensions; d++)
         {
             // Mean calculation
             float mean = 0;
 
-            for (int index : cluster->indices)
-                mean += points[index * numDimensions + d];
+            for (int index : cluster.getIndices())
+                mean += _points->getValueAt(index * numDimensions + d);
 
-            mean /= cluster->indices.size();
+            mean /= cluster.getIndices().size();
 
             // Standard deviation calculation
             float variance = 0;
 
-            for (int index : cluster->indices)
-                variance += pow(points[index * numDimensions + d] - mean, 2);
+            for (int index : cluster.getIndices())
+                variance += pow(_points->getValueAt(index * numDimensions + d) - mean, 2);
 
-            float stddev = sqrt(variance / cluster->indices.size());
+            float stddev = sqrt(variance / cluster.getIndices().size());
 
-            clusters[i]._mean[d] = mean;
-            clusters[i]._stddev[d] = stddev;
+            means[d] = mean;
+            stddevs[d] = stddev;
         }
     }
 
     qDebug() << "Done calculating data";
 
-    heatmap->setData(clusters, numDimensions);
+    _heatmap->setData(clusters, numDimensions);
 }
 
 // =============================================================================
 // Factory
 // =============================================================================
 
+QIcon HeatMapPluginFactory::getIcon() const
+{
+    return Application::getIconFont("FontAwesome").getIcon("braille");
+}
+
 ViewPlugin* HeatMapPluginFactory::produce()
 {
-    return new HeatMapPlugin();
+    return new HeatMapPlugin(this);
+}
+
+hdps::DataTypes HeatMapPluginFactory::supportedDataTypes() const
+{
+    DataTypes supportedTypes;
+    supportedTypes.append(PointType);
+    supportedTypes.append(ClusterType);
+    return supportedTypes;
 }

@@ -12,7 +12,7 @@ class QWebEngineView;
 class QWebEnginePage;
 class QWebChannel;
 
-struct Cluster;
+class Cluster;
 
 class HeatMapWidget;
 

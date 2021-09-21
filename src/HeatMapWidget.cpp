@@ -1,6 +1,6 @@
 #include "HeatMapWidget.h"
 
-#include "ClustersPlugin.h"
+#include "ClusterData.h"
 #include "util/FileUtil.h"
 
 #include <QVBoxLayout>
@@ -73,14 +73,14 @@ void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numD
 
         for (int j = 0; j < numDimensions; j++)
         {
-            nodes = nodes + std::to_string(clusters[i]._mean[j]);
+            nodes = nodes + std::to_string(clusters[i].getMean()[j]);
 
             if (j < numDimensions - 1) nodes = nodes + ",";
         }
         nodes = nodes + "], \"stddev\":[";
         for (int j = 0; j < numDimensions; j++)
         {
-            nodes = nodes + std::to_string(clusters[i]._stddev[j]);
+            nodes = nodes + std::to_string(clusters[i].getStandardDeviation()[j]);
 
             if (j < numDimensions - 1) nodes = nodes + ",";
         }
