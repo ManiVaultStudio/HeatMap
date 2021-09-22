@@ -176,8 +176,9 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
     qDebug() << "CLUSTER SELECTION";
     qDebug() << selectedClusters;
     
+    Points& pointSelection = static_cast<Points&>(_points->getSelection());
     Clusters& selection = static_cast<Clusters&>(_clusters->getSelection());
-    selection.indices.clear();
+    pointSelection.indices.clear();
 
     int numClusters = _clusters->getClusters().size();
     for (int i = 0; i < numClusters; i++)
@@ -185,8 +186,8 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
         Cluster& cluster = _clusters->getClusters()[i];
 
         if (selectedClusters[i]) {
-            selection.indices.insert(selection.indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            _core->notifySelectionChanged(_clusters->getName());
+            pointSelection.indices.insert(pointSelection.indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
+            _core->notifySelectionChanged(_points->getName());
         }
     }
 }
