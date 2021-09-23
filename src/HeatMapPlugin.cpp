@@ -245,8 +245,11 @@ void HeatMapPlugin::updateData()
     }
 
     qDebug() << "Done calculating data";
+    std::vector<QString> names;
+    if (DataSet::getSourceData(*_points).getDimensionNames().size() == DataSet::getSourceData(*_points).getNumDimensions())
+        names = DataSet::getSourceData(*_points).getDimensionNames();
 
-    _heatmap->setData(_clusters->getClusters(), numDimensions);
+    _heatmap->setData(_clusters->getClusters(), names, numDimensions);
 }
 
 // =============================================================================

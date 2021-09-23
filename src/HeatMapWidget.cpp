@@ -55,7 +55,7 @@ void HeatMapWidget::addDataOption(const QString option)
         dataOptionBuffer.append(option);
 }
 
-void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numDimensions)
+void HeatMapWidget::setData(const std::vector<Cluster>& clusters, std::vector<QString>& dimNames, const int numDimensions)
 {
     std::string _jsonObject = "";
 
@@ -89,8 +89,10 @@ void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numD
     // TODO: multi files
     std::string names = ",\n\"names\":[";
     for (int i = 0; i < numDimensions; i++) {
-
-        names = names + "\"" + "markerName " + std::to_string(i) + "\"";
+        if (dimNames.size() > i)
+            names = names + "\"" + dimNames[i].toStdString() + "\"";
+        else
+            names = names + "\"" + "markerName " + std::to_string(i) + "\"";
 
         if (i < numDimensions - 1) names = names + ",";
         else names = names + "]";
