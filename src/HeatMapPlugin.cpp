@@ -113,11 +113,12 @@ void HeatMapPlugin::init()
     // Load points when the dataset name of the points dataset reference changes
     connect(&_points, &DatasetRef<Points>::datasetNameChanged, this, [this, updateWindowTitle](const QString& oldDatasetName, const QString& newDatasetName) {
         //loadPoints(newDatasetName);
+        _dropWidget->setShowDropIndicator(false);
         updateWindowTitle();
     });
 
     // Load clusters when the dataset name of the clusters dataset reference changes
-    connect(&_clusters, &DatasetRef<Points>::datasetNameChanged, this, [this, updateWindowTitle](const QString& oldDatasetName, const QString& newDatasetName) {
+    connect(&_clusters, &DatasetRef<Clusters>::datasetNameChanged, this, [this, updateWindowTitle](const QString& oldDatasetName, const QString& newDatasetName) {
         //loadPoints(newDatasetName);
         updateWindowTitle();
         updateData();

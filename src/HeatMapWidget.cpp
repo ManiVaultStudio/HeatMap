@@ -30,8 +30,7 @@ void HeatMapCommunicationObject::js_highlightUpdated(int highlightId)
 }
 
 
-HeatMapWidget::HeatMapWidget()
-    :
+HeatMapWidget::HeatMapWidget() :
     loaded(false)
 {
     Q_INIT_RESOURCE(heatmap_resources);
