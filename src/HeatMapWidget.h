@@ -12,7 +12,7 @@ class QWebEngineView;
 class QWebEnginePage;
 class QWebChannel;
 
-struct Cluster;
+class Cluster;
 
 class HeatMapWidget;
 
@@ -46,8 +46,7 @@ public:
     ~HeatMapWidget() override;
 
     void addDataOption(const QString option);
-    QString getCurrentData() const;
-    void setData(const std::vector<Cluster>& data, const int numDimensions);
+    void setData(const std::vector<Cluster>& data, std::vector<QString>& dimNames, const int numDimensions);
 
 protected:
     void mousePressEvent(QMouseEvent *event)   Q_DECL_OVERRIDE;
@@ -72,7 +71,6 @@ private slots:
 private:
     HeatMapCommunicationObject* _communicationObject;
 
-    QString _currentData;
     unsigned int _numClusters;
 
     /** Whether the web view has loaded and web-functions are ready to be called. */

@@ -1,6 +1,6 @@
 #include "HeatMapWidget.h"
 
-#include "ClustersPlugin.h"
+#include "ClusterData.h"
 #include "util/FileUtil.h"
 
 #include <QVBoxLayout>
@@ -30,13 +30,15 @@ void HeatMapCommunicationObject::js_highlightUpdated(int highlightId)
 }
 
 
-HeatMapWidget::HeatMapWidget()
-    :
+HeatMapWidget::HeatMapWidget() :
     loaded(false)
 {
     Q_INIT_RESOURCE(heatmap_resources);
     _communicationObject = new HeatMapCommunicationObject(this);
     init(_communicationObject);
+
+    setAcceptDrops(true);
+    setMouseTracking(true);
 }
 
 HeatMapWidget::~HeatMapWidget()
@@ -52,12 +54,7 @@ void HeatMapWidget::addDataOption(const QString option)
         dataOptionBuffer.append(option);
 }
 
-QString HeatMapWidget::getCurrentData() const
-{
-    return _currentData;
-}
-
-void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numDimensions)
+void HeatMapWidget::setData(const std::vector<Cluster>& clusters, std::vector<QString>& dimNames, const int numDimensions)
 {
     std::string _jsonObject = "";
 
@@ -73,14 +70,14 @@ void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numD
 
         for (int j = 0; j < numDimensions; j++)
         {
-            nodes = nodes + std::to_string(clusters[i]._mean[j]);
+            nodes = nodes + std::to_string(clusters[i].getMean()[j]);
 
             if (j < numDimensions - 1) nodes = nodes + ",";
         }
         nodes = nodes + "], \"stddev\":[";
         for (int j = 0; j < numDimensions; j++)
         {
-            nodes = nodes + std::to_string(clusters[i]._stddev[j]);
+            nodes = nodes + std::to_string(clusters[i].getStandardDeviation()[j]);
 
             if (j < numDimensions - 1) nodes = nodes + ",";
         }
@@ -91,8 +88,10 @@ void HeatMapWidget::setData(const std::vector<Cluster>& clusters, const int numD
     // TODO: multi files
     std::string names = ",\n\"names\":[";
     for (int i = 0; i < numDimensions; i++) {
-
-        names = names + "\"" + "markerName " + std::to_string(i) + "\"";
+        if (dimNames.size() > i)
+            names = names + "\"" + dimNames[i].toStdString() + "\"";
+        else
+            names = names + "\"" + "markerName " + std::to_string(i) + "\"";
 
         if (i < numDimensions - 1) names = names + ",";
         else names = names + "]";
@@ -142,8 +141,6 @@ void HeatMapWidget::initWebPage()
 
 void HeatMapWidget::js_selectData(QString name)
 {
-    _currentData = name;
-
     emit dataSetPicked(name);
 }
 
