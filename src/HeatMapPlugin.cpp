@@ -2,6 +2,7 @@
 
 #include "PointData.h"
 #include "ClusterData.h"
+#include "event/Event.h"
 
 #include <QtCore>
 #include <QtDebug>
@@ -44,39 +45,36 @@ void HeatMapPlugin::init()
         if (tokens.count() == 1)
             return dropRegions;
 
-        const auto datasetName = tokens[0];
-        const auto dataType = DataType(tokens[1]);
-        const auto dataTypes = DataTypes({ PointType, ClusterType });
-        const auto currentDatasetName = _points.getDatasetName();
+        const auto datasetGuid = tokens[1];
+        const auto dataType    = DataType(tokens[2]);
+        const auto dataTypes   = DataTypes({ PointType, ClusterType });
 
         if (!dataTypes.contains(dataType))
-            dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", false);
+            dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
 
         if (dataType == PointType) {
-            const auto candidateDataset = _core->requestData<Points>(datasetName);
-            const auto candidateDatasetName = candidateDataset.getName();
+            const auto candidateDataset = _core->requestDataset<Points>(datasetGuid);
+            const auto candidateDatasetName = candidateDataset->getGuiName();
             const auto description = QString("Visualize %1 as points or density/contour map").arg(candidateDatasetName);
 
             if (!_points.isValid()) {
-                dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, true, [this, candidateDatasetName]() {
-                    _points.setDatasetName(candidateDatasetName);
+                dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
+                    _points = candidateDataset;
                 });
             }
             else {
-                if (candidateDatasetName == currentDatasetName) {
-                    dropRegions << new gui::DropWidget::DropRegion(this, "Warning", "Data already loaded", false);
+                if (candidateDataset == _points) {
+                    dropRegions << new gui::DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
                 }
                 else {
-                    const auto points = _core->requestData<Points>(currentDatasetName);
-
-                    if (points.getNumPoints() != candidateDataset.getNumPoints()) {
-                        dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, true, [this, candidateDatasetName]() {
-                            _points.setDatasetName(candidateDatasetName);
+                    if (_points->getNumPoints() != candidateDataset->getNumPoints()) {
+                        dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
+                            _points = candidateDataset;
                         });
                     }
                     else {
-                        dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, true, [this, candidateDatasetName]() {
-                            _points.setDatasetName(candidateDatasetName);
+                        dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
+                            _points = candidateDataset;
                         });
                     }
                 }
@@ -84,17 +82,16 @@ void HeatMapPlugin::init()
         }
 
         if (dataType == ClusterType) {
-            const auto candidateDataset = _core->requestData<Clusters>(datasetName);
-            const auto candidateDatasetName = candidateDataset.getName();
-            const auto description = QString("Clusters points by %1").arg(candidateDatasetName);
+            const auto candidateDataset = _core->requestDataset<Clusters>(datasetGuid);
+            const auto description      = QString("Clusters points by %1").arg(candidateDataset->getGuiName());
 
             if (_points.isValid()) {
-                if (candidateDatasetName == _clusters.getDatasetName()) {
-                    dropRegions << new gui::DropWidget::DropRegion(this, "Clusters", "Cluster set is already in use", false, [this]() {});
+                if (candidateDataset == _clusters) {
+                    dropRegions << new gui::DropWidget::DropRegion(this, "Clusters", "Cluster set is already in use", "exclamation-circle", false, [this]() {});
                 }
                 else {
-                    dropRegions << new gui::DropWidget::DropRegion(this, "Clusters", description, true, [this, candidateDatasetName]() {
-                        _clusters.setDatasetName(candidateDatasetName);
+                    dropRegions << new gui::DropWidget::DropRegion(this, "Clusters", description, "th-large", true, [this, candidateDataset]() {
+                        _clusters = candidateDataset;
                     });
                 }
             }
@@ -107,18 +104,18 @@ void HeatMapPlugin::init()
         if (!_points.isValid())
             setWindowTitle(getGuiName());
         else
-            setWindowTitle(QString("%1: %2").arg(getGuiName(), _points.getDatasetName()));
+            setWindowTitle(QString("%1: %2").arg(getGuiName(), _points->getGuiName()));
     };
 
     // Load points when the dataset name of the points dataset reference changes
-    connect(&_points, &DatasetRef<Points>::datasetNameChanged, this, [this, updateWindowTitle](const QString& oldDatasetName, const QString& newDatasetName) {
+    connect(&_points, &Dataset<Points>::changed, this, [this, updateWindowTitle]() {
         //loadPoints(newDatasetName);
         _dropWidget->setShowDropIndicator(false);
         updateWindowTitle();
     });
 
     // Load clusters when the dataset name of the clusters dataset reference changes
-    connect(&_clusters, &DatasetRef<Clusters>::datasetNameChanged, this, [this, updateWindowTitle](const QString& oldDatasetName, const QString& newDatasetName) {
+    connect(&_clusters, &Dataset<Clusters>::changed, this, [this, updateWindowTitle]() {
         //loadPoints(newDatasetName);
         updateWindowTitle();
         updateData();
@@ -140,29 +137,12 @@ void HeatMapPlugin::onDataEvent(hdps::DataEvent* dataEvent)
     // Event which gets triggered when a dataset is added to the system.
     if (dataEvent->getType() == EventType::DataAdded)
     {
-        _heatmap->addDataOption(dataEvent->dataSetName);
+        _heatmap->addDataOption(dataEvent->getDataset()->getGuiName());
     }
     // Event which gets triggered when the data contained in a dataset changes.
     if (dataEvent->getType() == EventType::DataChanged)
     {
         updateData();
-    }
-    // Event which gets triggered when a dataset is removed from the system.
-    if (dataEvent->getType() == EventType::DataRemoved)
-    {
-        // Request the point data that has been removed for further processing
-        const Points& removedSet = _core->requestData<Points>(dataEvent->dataSetName);
-
-        // ...
-    }
-    // Event which gets triggered when the selection associated with a dataset changes.
-    if (dataEvent->getType() == EventType::SelectionChanged)
-    {
-        // Request the point data associated with the changed selection, and retrieve the selection from it
-        const Points& changedDataSet = _core->requestData<Points>(dataEvent->dataSetName);
-        const hdps::DataSet& selectionSet = changedDataSet.getSelection();
-
-        // ...
     }
 }
 
@@ -177,9 +157,10 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
     qDebug() << "CLUSTER SELECTION";
     qDebug() << selectedClusters;
     
-    Points& pointSelection = static_cast<Points&>(_points->getSelection());
-    Clusters& selection = static_cast<Clusters&>(_clusters->getSelection());
-    pointSelection.indices.clear();
+    auto pointSelection = _points->getSelection<Points>();
+    auto selection      = _clusters->getSelection<Clusters>();
+
+    pointSelection->indices.clear();
 
     int numClusters = _clusters->getClusters().size();
     for (int i = 0; i < numClusters; i++)
@@ -187,8 +168,8 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
         Cluster& cluster = _clusters->getClusters()[i];
 
         if (selectedClusters[i]) {
-            pointSelection.indices.insert(pointSelection.indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            _core->notifySelectionChanged(_points->getName());
+            pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
+            _core->notifyDataSelectionChanged(_points);
         }
     }
 }
@@ -198,9 +179,9 @@ void HeatMapPlugin::updateData()
     if (!_points.isValid() || !_clusters.isValid())
         return;
 
-    Points& source = DataSet::getSourceData(*_points);
+    auto source = _points->getSourceDataset<Points>();
 
-    qDebug() << "Working on data: " << _clusters->getName();
+    qDebug() << "Working on data: " << _clusters->getGuiName();
     
     qDebug() << "Calculating data";
 
@@ -212,7 +193,7 @@ void HeatMapPlugin::updateData()
     for (int i = 0; i < numClusters; i++) {
         Cluster& cluster = _clusters->getClusters()[i];
                 
-        numDimensions = source.getNumDimensions();
+        numDimensions = source->getNumDimensions();
         qDebug() << "Num dimensions: " << numDimensions;
 
         // Cluster statistics
@@ -228,7 +209,7 @@ void HeatMapPlugin::updateData()
             float mean = 0;
 
             for (int index : cluster.getIndices())
-                mean += source.getValueAt(index * numDimensions + d);
+                mean += source->getValueAt(index * numDimensions + d);
 
             mean /= cluster.getIndices().size();
 
@@ -236,7 +217,7 @@ void HeatMapPlugin::updateData()
             float variance = 0;
 
             for (int index : cluster.getIndices())
-                variance += pow(source.getValueAt(index * numDimensions + d) - mean, 2);
+                variance += pow(source->getValueAt(index * numDimensions + d) - mean, 2);
 
             float stddev = sqrt(variance / cluster.getIndices().size());
 
@@ -247,8 +228,8 @@ void HeatMapPlugin::updateData()
 
     qDebug() << "Done calculating data";
     std::vector<QString> names;
-    if (DataSet::getSourceData(*_points).getDimensionNames().size() == DataSet::getSourceData(*_points).getNumDimensions())
-        names = DataSet::getSourceData(*_points).getDimensionNames();
+    if (source->getDimensionNames().size() == source->getNumDimensions())
+        names = source->getDimensionNames();
 
     _heatmap->setData(_clusters->getClusters(), names, numDimensions);
 }

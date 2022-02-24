@@ -2,7 +2,7 @@
 
 #include <ViewPlugin.h>
 
-#include "util/DatasetRef.h"
+#include "Dataset.h"
 
 #include "HeatMapWidget.h"
 #include "widgets/DropWidget.h"
@@ -47,8 +47,8 @@ protected slots:
 private:
     void updateData();
 
-    DatasetRef<Points>              _points;        /** Currently loaded points dataset */
-    DatasetRef<Clusters>            _clusters;      /** Currently loaded clusters dataset */
+    hdps::Dataset<Points>              _points;        /** Currently loaded points dataset */
+    hdps::Dataset<Clusters>            _clusters;      /** Currently loaded clusters dataset */
 
     HeatMapWidget*                  _heatmap;       /** Heatmap widget displaying cluster data */
     hdps::gui::DropWidget*          _dropWidget;    /** Widget allowing users to drop in data */
