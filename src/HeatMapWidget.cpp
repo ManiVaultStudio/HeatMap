@@ -54,7 +54,7 @@ void HeatMapWidget::addDataOption(const QString option)
         dataOptionBuffer.append(option);
 }
 
-void HeatMapWidget::setData(const std::vector<Cluster>& clusters, std::vector<QString>& dimNames, const int numDimensions)
+void HeatMapWidget::setData(const QVector<Cluster>& clusters, std::vector<QString>& dimNames, const int numDimensions)
 {
     std::string _jsonObject = "";
 

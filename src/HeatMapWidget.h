@@ -46,7 +46,7 @@ public:
     ~HeatMapWidget() override;
 
     void addDataOption(const QString option);
-    void setData(const std::vector<Cluster>& data, std::vector<QString>& dimNames, const int numDimensions);
+    void setData(const QVector<Cluster>& data, std::vector<QString>& dimNames, const int numDimensions);
 
 protected:
     void mousePressEvent(QMouseEvent *event)   Q_DECL_OVERRIDE;
