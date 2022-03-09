@@ -32,10 +32,7 @@ void HeatMapPlugin::init()
 {
     _heatmap->setPage(":/heatmap/heatmap.html", "qrc:/heatmap/");
 
-    setDockingLocation(DockableWidget::DockingLocation::Right);
-    setFocusPolicy(Qt::ClickFocus);
-
-    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(this, "No data loaded", "Drag an item from the data hierarchy and drop it here to visualize data..."));
+    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(&_widget, "No data loaded", "Drag an item from the data hierarchy and drop it here to visualize data..."));
     _dropWidget->initialize([this](const QMimeData* mimeData) -> gui::DropWidget::DropRegions {
         gui::DropWidget::DropRegions dropRegions;
         
@@ -102,9 +99,9 @@ void HeatMapPlugin::init()
 
     const auto updateWindowTitle = [this]() -> void {
         if (!_points.isValid())
-            setWindowTitle(getGuiName());
+			_heatmap->setWindowTitle(getGuiName());
         else
-            setWindowTitle(QString("%1: %2").arg(getGuiName(), _points->getGuiName()));
+			_heatmap->setWindowTitle(QString("%1: %2").arg(getGuiName(), _points->getGuiName()));
     };
 
     // Load points when the dataset name of the points dataset reference changes
@@ -129,7 +126,8 @@ void HeatMapPlugin::init()
     layout->setMargin(0);
     layout->setSpacing(0);
     layout->addWidget(_heatmap);
-    setLayout(layout);
+    
+	_widget.setLayout(layout);
 }
 
 void HeatMapPlugin::onDataEvent(hdps::DataEvent* dataEvent)
@@ -169,7 +167,7 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
 
         if (selectedClusters[i]) {
             pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            _core->notifyDataSelectionChanged(_points);
+            _core->notifyDatasetSelectionChanged(_points);
         }
     }
 }
