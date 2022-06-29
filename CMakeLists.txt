@@ -46,10 +46,15 @@ target_link_libraries(${PROJECT} "$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/lib/HD
 target_link_libraries(${PROJECT} "$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/lib/PointData.lib")
 target_link_libraries(${PROJECT} "$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/lib/ClusterData.lib")
 
+install(TARGETS ${PROJECT}
+   RUNTIME DESTINATION Plugins COMPONENT SHAREDLIB
+)
+
 add_custom_command(TARGET ${PROJECT} POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-    "$<TARGET_FILE:${PROJECT}>"
-    "$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/Plugins/$<TARGET_FILE_NAME:${PROJECT}>"
+	COMMAND "${CMAKE_COMMAND}"
+	--install ${CMAKE_CURRENT_BINARY_DIR}
+	--config $<CONFIGURATION>
+	--prefix ${INSTALL_DIR}/$<CONFIGURATION>
 )
 
 # Automatically set the debug environment (command + working directory) for MSVC in debug mode
