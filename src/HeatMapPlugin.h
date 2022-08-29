@@ -8,6 +8,7 @@
 #include "widgets/DropWidget.h"
 
 #include <QList>
+#include <QTimer>
 
 using namespace hdps::plugin;
 using namespace hdps::util;
@@ -38,6 +39,12 @@ public:
     
     void init() override;
 
+    /**
+     * Load one (or more datasets in the view)
+     * @param datasets Dataset(s) to load
+     */
+    void loadData(const hdps::Datasets& datasets) override;
+
     void onDataEvent(hdps::DataEvent* dataEvent);
     
 protected slots:
@@ -47,11 +54,12 @@ protected slots:
 private:
     void updateData();
 
-    hdps::Dataset<Points>              _points;        /** Currently loaded points dataset */
-    hdps::Dataset<Clusters>            _clusters;      /** Currently loaded clusters dataset */
-
-    HeatMapWidget*                  _heatmap;       /** Heatmap widget displaying cluster data */
-    hdps::gui::DropWidget*          _dropWidget;    /** Widget allowing users to drop in data */
+    hdps::Datasets              _datasetsDeferredLoad;      /** Datasets cannot be loaded straight after the plugin is loaded because the web page needs to load first */
+    QTimer                      _deferredLoadTimer;         /** Wait for the web page to load before loading the datasets */
+    hdps::Dataset<Points>       _points;                    /** Currently loaded points dataset */
+    hdps::Dataset<Clusters>     _clusters;                  /** Currently loaded clusters dataset */
+    HeatMapWidget*              _heatmap;                   /** Heatmap widget displaying cluster data */
+    hdps::gui::DropWidget*      _dropWidget;                /** Widget allowing users to drop in data */
 };
 
 // =============================================================================
@@ -69,10 +77,21 @@ public:
     HeatMapPluginFactory(void) {}
     ~HeatMapPluginFactory(void) override {}
 
-    /** Returns the plugin icon */
-    QIcon getIcon() const override;
+    /**
+     * Get plugin icon
+     * @param color Icon color for flat (font) icons
+     * @return Icon
+     */
+    QIcon getIcon(const QColor& color = Qt::black) const override;
     
     ViewPlugin* produce() override;
 
     hdps::DataTypes supportedDataTypes() const override;
+
+    /**
+     * Get plugin trigger actions given \p datasets
+     * @param datasets Vector of input datasets
+     * @return Vector of plugin trigger actions
+     */
+    hdps::PluginTriggerActions getPluginTriggerActions(const hdps::Datasets& datasets) const override;
 };

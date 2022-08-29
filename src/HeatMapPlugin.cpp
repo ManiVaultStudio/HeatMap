@@ -4,8 +4,11 @@
 #include "ClusterData.h"
 #include "event/Event.h"
 
+#include <actions/PluginTriggerAction.h>
+
 #include <QtCore>
 #include <QtDebug>
+#include <QWebEnginePage>
 
 Q_PLUGIN_METADATA(IID "nl.tudelft.HeatMapPlugin")
 
@@ -21,6 +24,23 @@ HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
 {
     _heatmap = new HeatMapWidget();
     _dropWidget = new gui::DropWidget(_heatmap);
+
+    _deferredLoadTimer.setInterval(250);
+
+    connect(&_deferredLoadTimer, &QTimer::timeout, this, [this]() -> void {
+        if (_heatmap->getPage()->isLoading())
+            return;
+
+        _deferredLoadTimer.stop();
+
+		if (_datasetsDeferredLoad.count() >= 1 && _datasetsDeferredLoad.first()->getDataType() != PointType)
+			return;
+
+		_points = Dataset<Points>(_datasetsDeferredLoad.first());
+
+		if (_datasetsDeferredLoad.count() == 2 && _datasetsDeferredLoad[1]()->getDataType() == ClusterType)
+			_clusters = Dataset<Clusters>(_datasetsDeferredLoad[1]);
+    });
 }
 
 HeatMapPlugin::~HeatMapPlugin(void)
@@ -130,6 +150,13 @@ void HeatMapPlugin::init()
 	_widget.setLayout(layout);
 }
 
+void HeatMapPlugin::loadData(const hdps::Datasets& datasets)
+{
+    _datasetsDeferredLoad = datasets;
+
+    _deferredLoadTimer.start();
+}
+
 void HeatMapPlugin::onDataEvent(hdps::DataEvent* dataEvent)
 {
     // Event which gets triggered when a dataset is added to the system.
@@ -236,9 +263,9 @@ void HeatMapPlugin::updateData()
 // Factory
 // =============================================================================
 
-QIcon HeatMapPluginFactory::getIcon() const
+QIcon HeatMapPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
 {
-    return Application::getIconFont("FontAwesome").getIcon("braille");
+    return Application::getIconFont("FontAwesome").getIcon("burn", color);
 }
 
 ViewPlugin* HeatMapPluginFactory::produce()
@@ -252,4 +279,41 @@ hdps::DataTypes HeatMapPluginFactory::supportedDataTypes() const
     supportedTypes.append(PointType);
     supportedTypes.append(ClusterType);
     return supportedTypes;
+}
+
+hdps::gui::PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
+{
+	PluginTriggerActions pluginTriggerActions;
+
+	const auto getPluginInstance = [this]() -> HeatMapPlugin* {
+		return dynamic_cast<HeatMapPlugin*>(Application::core()->requestPlugin(getKind()));
+	};
+
+	const auto numberOfDatasets = datasets.count();
+
+	if (numberOfDatasets == 2 && datasets[0]->getDataType() == PointType && datasets[1]->getDataType() == ClusterType) {
+		auto pluginTriggerAction = createPluginTriggerAction("Heatmap", "View clusters in heatmap", datasets, "burn");
+
+		connect(pluginTriggerAction, &QAction::triggered, [this, getPluginInstance, datasets]() -> void {
+            getPluginInstance()->loadData(datasets);
+        });
+
+		pluginTriggerActions << pluginTriggerAction;
+    }
+    else {
+		if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
+			if (numberOfDatasets >= 1) {
+				auto pluginTriggerAction = createPluginTriggerAction("Heatmap", "View clusters in heatmap", datasets, "burn");
+
+				connect(pluginTriggerAction, &QAction::triggered, [this, getPluginInstance, datasets]() -> void {
+					for (auto dataset : datasets)
+						getPluginInstance()->loadData({ dataset });
+                });
+
+				pluginTriggerActions << pluginTriggerAction;
+			}
+		}
+    }
+
+	return pluginTriggerActions;
 }
