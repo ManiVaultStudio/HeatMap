@@ -52,7 +52,7 @@ void HeatMapPlugin::init()
 {
     _heatmap->setPage(":/heatmap/heatmap.html", "qrc:/heatmap/");
 
-    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(&_widget, "No data loaded", "Drag an item from the data hierarchy and drop it here to visualize data..."));
+    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag an item from the data hierarchy and drop it here to visualize data..."));
     _dropWidget->initialize([this](const QMimeData* mimeData) -> gui::DropWidget::DropRegions {
         gui::DropWidget::DropRegions dropRegions;
         
@@ -147,7 +147,7 @@ void HeatMapPlugin::init()
     layout->setSpacing(0);
     layout->addWidget(_heatmap);
     
-	_widget.setLayout(layout);
+    getWidget().setLayout(layout);
 }
 
 void HeatMapPlugin::loadData(const hdps::Datasets& datasets)
