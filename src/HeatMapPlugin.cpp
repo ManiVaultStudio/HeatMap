@@ -13,6 +13,7 @@
 Q_PLUGIN_METADATA(IID "nl.tudelft.HeatMapPlugin")
 
 using namespace hdps;
+using namespace hdps::gui;
 
 // =============================================================================
 // View
@@ -194,7 +195,7 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
 
         if (selectedClusters[i]) {
             pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            _core->notifyDatasetSelectionChanged(_points);
+            events().notifyDatasetSelectionChanged(_points);
         }
     }
 }
@@ -281,20 +282,18 @@ hdps::DataTypes HeatMapPluginFactory::supportedDataTypes() const
     return supportedTypes;
 }
 
-hdps::gui::PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
+PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
 {
 	PluginTriggerActions pluginTriggerActions;
 
 	const auto getPluginInstance = [this]() -> HeatMapPlugin* {
-		return dynamic_cast<HeatMapPlugin*>(Application::core()->requestPlugin(getKind()));
+		return dynamic_cast<HeatMapPlugin*>(plugins().requestViewPlugin(getKind()));
 	};
 
 	const auto numberOfDatasets = datasets.count();
 
 	if (numberOfDatasets == 2 && datasets[0]->getDataType() == PointType && datasets[1]->getDataType() == ClusterType) {
-		auto pluginTriggerAction = createPluginTriggerAction("Heatmap", "View clusters in heatmap", datasets, "burn");
-
-		connect(pluginTriggerAction, &QAction::triggered, [this, getPluginInstance, datasets]() -> void {
+		auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             getPluginInstance()->loadData(datasets);
         });
 
@@ -303,9 +302,7 @@ hdps::gui::PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(co
     else {
 		if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
 			if (numberOfDatasets >= 1) {
-				auto pluginTriggerAction = createPluginTriggerAction("Heatmap", "View clusters in heatmap", datasets, "burn");
-
-				connect(pluginTriggerAction, &QAction::triggered, [this, getPluginInstance, datasets]() -> void {
+				auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
 					for (auto dataset : datasets)
 						getPluginInstance()->loadData({ dataset });
                 });

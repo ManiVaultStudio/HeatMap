@@ -93,5 +93,5 @@ public:
      * @param datasets Vector of input datasets
      * @return Vector of plugin trigger actions
      */
-    hdps::PluginTriggerActions getPluginTriggerActions(const hdps::Datasets& datasets) const override;
+    hdps::gui::PluginTriggerActions getPluginTriggerActions(const hdps::Datasets& datasets) const override;
 };
