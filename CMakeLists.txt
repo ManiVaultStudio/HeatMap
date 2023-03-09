@@ -10,7 +10,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /EHsc /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /EHsc /MP /permissive- /Zc:__cplusplus ")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
@@ -38,12 +38,14 @@ source_group( Plugin FILES ${SOURCES})
 source_group( Resources FILES ${RESOURCES})
 source_group( Resources\\generated FILES ${CMAKE_CURRENT_BINARY_DIR}/qrc_heatmap_resources.cpp)
 
-include_directories("$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/include/")
-
 add_library(${PROJECT} SHARED ${SOURCES} ${RESOURCES} ${RESOURCE_FILES})
 
-target_link_libraries(${PROJECT} Qt6::Widgets)
-target_link_libraries(${PROJECT} Qt6::WebEngineWidgets)
+target_include_directories(${PROJECT} PRIVATE "$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/include/")
+
+target_compile_features(${PROJECT} PRIVATE cxx_std_17)
+
+target_link_libraries(${PROJECT} PRIVATE Qt6::Widgets)
+target_link_libraries(${PROJECT} PRIVATE Qt6::WebEngineWidgets)
 
 if(MSVC)
     set(LIB_LINK_SUFFIX ".lib") 
@@ -55,9 +57,9 @@ set(HDPS_LINK_LIBRARY "${INSTALL_DIR}/$<CONFIGURATION>/lib/${CMAKE_SHARED_LIBRAR
 set(POINT_DATA_LINK_LIBRARY "${INSTALL_DIR}/$<CONFIGURATION>/lib/${CMAKE_SHARED_LIBRARY_PREFIX}PointData${LIB_LINK_SUFFIX}") 
 set(CLUSTER_DATA_LINK_LIBRARY "${INSTALL_DIR}/$<CONFIGURATION>/lib/${CMAKE_SHARED_LIBRARY_PREFIX}ClusterData${LIB_LINK_SUFFIX}") 
 
-target_link_libraries(${PROJECT} "${HDPS_LINK_LIBRARY}")
-target_link_libraries(${PROJECT} "${POINT_DATA_LINK_LIBRARY}")
-target_link_libraries(${PROJECT} "${CLUSTER_DATA_LINK_LIBRARY}")
+target_link_libraries(${PROJECT} PRIVATE "${HDPS_LINK_LIBRARY}")
+target_link_libraries(${PROJECT} PRIVATE "${POINT_DATA_LINK_LIBRARY}")
+target_link_libraries(${PROJECT} PRIVATE "${CLUSTER_DATA_LINK_LIBRARY}")
 
 install(TARGETS ${PROJECT}
    RUNTIME DESTINATION Plugins COMPONENT SHAREDLIB
