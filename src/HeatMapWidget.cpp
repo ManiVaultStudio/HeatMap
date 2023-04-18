@@ -1,6 +1,6 @@
 #include "HeatMapWidget.h"
 
-#include "ClusterData.h"
+#include "ClusterData/ClusterData.h"
 #include "util/FileUtil.h"
 
 #include <QVBoxLayout>
