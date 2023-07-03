@@ -45,7 +45,7 @@ public:
      */
     void loadData(const hdps::Datasets& datasets) override;
 
-    void onDataEvent(hdps::DataEvent* dataEvent);
+    void onDataEvent(hdps::DatasetEvent* dataEvent);
     
 protected slots:
     void dataSetPicked(const QString& name);

@@ -158,15 +158,15 @@ void HeatMapPlugin::loadData(const hdps::Datasets& datasets)
     _deferredLoadTimer.start();
 }
 
-void HeatMapPlugin::onDataEvent(hdps::DataEvent* dataEvent)
+void HeatMapPlugin::onDataEvent(hdps::DatasetEvent* dataEvent)
 {
     // Event which gets triggered when a dataset is added to the system.
-    if (dataEvent->getType() == EventType::DataAdded)
+    if (dataEvent->getType() == EventType::DatasetAdded)
     {
         _heatmap->addDataOption(dataEvent->getDataset()->getGuiName());
     }
     // Event which gets triggered when the data contained in a dataset changes.
-    if (dataEvent->getType() == EventType::DataChanged)
+    if (dataEvent->getType() == EventType::DatasetDataChanged)
     {
         updateData();
     }
@@ -195,7 +195,7 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
 
         if (selectedClusters[i]) {
             pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            events().notifyDatasetSelectionChanged(_points);
+            events().notifyDatasetDataSelectionChanged(_points);
         }
     }
 }
