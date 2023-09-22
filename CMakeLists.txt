@@ -34,11 +34,19 @@ set (RESOURCES
     res/heatmap_resources.qrc
 )
 
+set(PLUGIN_MOC_HEADERS
+    src/HeatMapPlugin.h
+    src/HeatMapWidget.h
+)
+
 source_group( Plugin FILES ${SOURCES})
 source_group( Resources FILES ${RESOURCES})
 source_group( Resources\\generated FILES ${CMAKE_CURRENT_BINARY_DIR}/qrc_heatmap_resources.cpp)
 
 add_library(${PROJECT} SHARED ${SOURCES} ${RESOURCES} ${RESOURCE_FILES})
+
+qt_wrap_cpp(HEATMAPPLUGIN_MOC ${PLUGIN_MOC_HEADERS} TARGET ${PROJECT})
+target_sources(${PROJECT} PRIVATE ${HEATMAPPLUGIN_MOC})
 
 target_include_directories(${PROJECT} PRIVATE "$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/include/")
 
