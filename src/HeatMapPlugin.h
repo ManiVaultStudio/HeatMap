@@ -10,8 +10,8 @@
 #include <QList>
 #include <QTimer>
 
-using namespace hdps::plugin;
-using namespace hdps::util;
+using namespace mv::plugin;
+using namespace mv::util;
 
 class Points;
 class Clusters;
@@ -43,9 +43,9 @@ public:
      * Load one (or more datasets in the view)
      * @param datasets Dataset(s) to load
      */
-    void loadData(const hdps::Datasets& datasets) override;
+    void loadData(const mv::Datasets& datasets) override;
 
-    void onDataEvent(hdps::DatasetEvent* dataEvent);
+    void onDataEvent(mv::DatasetEvent* dataEvent);
     
 protected slots:
     void dataSetPicked(const QString& name);
@@ -54,12 +54,12 @@ protected slots:
 private:
     void updateData();
 
-    hdps::Datasets              _datasetsDeferredLoad;      /** Datasets cannot be loaded straight after the plugin is loaded because the web page needs to load first */
+    mv::Datasets              _datasetsDeferredLoad;      /** Datasets cannot be loaded straight after the plugin is loaded because the web page needs to load first */
     QTimer                      _deferredLoadTimer;         /** Wait for the web page to load before loading the datasets */
-    hdps::Dataset<Points>       _points;                    /** Currently loaded points dataset */
-    hdps::Dataset<Clusters>     _clusters;                  /** Currently loaded clusters dataset */
+    mv::Dataset<Points>       _points;                    /** Currently loaded points dataset */
+    mv::Dataset<Clusters>     _clusters;                  /** Currently loaded clusters dataset */
     HeatMapWidget*              _heatmap;                   /** Heatmap widget displaying cluster data */
-    hdps::gui::DropWidget*      _dropWidget;                /** Widget allowing users to drop in data */
+    mv::gui::DropWidget*      _dropWidget;                /** Widget allowing users to drop in data */
 };
 
 // =============================================================================
@@ -68,7 +68,7 @@ private:
 
 class HeatMapPluginFactory : public ViewPluginFactory
 {
-    Q_INTERFACES(hdps::plugin::ViewPluginFactory hdps::plugin::PluginFactory)
+    Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
     Q_PLUGIN_METADATA(IID   "nl.tudelft.HeatMapPlugin"
                       FILE  "HeatMapPlugin.json")
@@ -86,12 +86,12 @@ public:
     
     ViewPlugin* produce() override;
 
-    hdps::DataTypes supportedDataTypes() const override;
+    mv::DataTypes supportedDataTypes() const override;
 
     /**
      * Get plugin trigger actions given \p datasets
      * @param datasets Vector of input datasets
      * @return Vector of plugin trigger actions
      */
-    hdps::gui::PluginTriggerActions getPluginTriggerActions(const hdps::Datasets& datasets) const override;
+    mv::gui::PluginTriggerActions getPluginTriggerActions(const mv::Datasets& datasets) const override;
 };

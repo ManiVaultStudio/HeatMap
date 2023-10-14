@@ -14,7 +14,7 @@ class Cluster;
 
 class HeatMapWidget;
 
-class HeatMapCommunicationObject : public hdps::gui::WebCommunicationObject
+class HeatMapCommunicationObject : public mv::gui::WebCommunicationObject
 {
     Q_OBJECT
 public:
@@ -36,7 +36,7 @@ private:
     HeatMapWidget* _parent;
 };
 
-class HeatMapWidget : public hdps::gui::WebWidget
+class HeatMapWidget : public mv::gui::WebWidget
 {
     Q_OBJECT
 public:

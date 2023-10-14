@@ -12,8 +12,8 @@
 
 Q_PLUGIN_METADATA(IID "nl.tudelft.HeatMapPlugin")
 
-using namespace hdps;
-using namespace hdps::gui;
+using namespace mv;
+using namespace mv::gui;
 
 // =============================================================================
 // View
@@ -151,14 +151,14 @@ void HeatMapPlugin::init()
     getWidget().setLayout(layout);
 }
 
-void HeatMapPlugin::loadData(const hdps::Datasets& datasets)
+void HeatMapPlugin::loadData(const mv::Datasets& datasets)
 {
     _datasetsDeferredLoad = datasets;
 
     _deferredLoadTimer.start();
 }
 
-void HeatMapPlugin::onDataEvent(hdps::DatasetEvent* dataEvent)
+void HeatMapPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 {
     // Event which gets triggered when a dataset is added to the system.
     if (dataEvent->getType() == EventType::DatasetAdded)
@@ -274,7 +274,7 @@ ViewPlugin* HeatMapPluginFactory::produce()
     return new HeatMapPlugin(this);
 }
 
-hdps::DataTypes HeatMapPluginFactory::supportedDataTypes() const
+mv::DataTypes HeatMapPluginFactory::supportedDataTypes() const
 {
     DataTypes supportedTypes;
     supportedTypes.append(PointType);
@@ -282,7 +282,7 @@ hdps::DataTypes HeatMapPluginFactory::supportedDataTypes() const
     return supportedTypes;
 }
 
-PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
+PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
 	PluginTriggerActions pluginTriggerActions;
 
