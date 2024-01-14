@@ -71,7 +71,7 @@ void HeatMapPlugin::init()
             dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
 
         if (dataType == PointType) {
-            const auto candidateDataset = _core->requestDataset<Points>(datasetGuid);
+            const auto candidateDataset = mv::data().getDataset<Points>(datasetGuid);
             const auto candidateDatasetName = candidateDataset->getGuiName();
             const auto description = QString("Visualize %1 as points or density/contour map").arg(candidateDatasetName);
 
@@ -100,7 +100,7 @@ void HeatMapPlugin::init()
         }
 
         if (dataType == ClusterType) {
-            const auto candidateDataset = _core->requestDataset<Clusters>(datasetGuid);
+            const auto candidateDataset = mv::data().getDataset<Clusters>(datasetGuid);
             const auto description      = QString("Clusters points by %1").arg(candidateDataset->getGuiName());
 
             if (_points.isValid()) {
