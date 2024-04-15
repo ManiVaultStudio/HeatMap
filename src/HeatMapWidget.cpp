@@ -4,8 +4,7 @@
 
 #include <cassert>
 
-HeatMapCommunicationObject::HeatMapCommunicationObject(HeatMapWidget* parent)
-    :
+HeatMapCommunicationObject::HeatMapCommunicationObject(HeatMapWidget* parent) :
     _parent(parent)
 {
 
@@ -28,7 +27,11 @@ void HeatMapCommunicationObject::js_highlightUpdated(int highlightId)
 
 
 HeatMapWidget::HeatMapWidget() :
-    loaded(false)
+    mv::gui::WebWidget(),
+    _communicationObject(nullptr),
+    loaded(false),
+    _numClusters(0),
+    dataOptionBuffer()
 {
     Q_INIT_RESOURCE(heatmap_resources);
     _communicationObject = new HeatMapCommunicationObject(this);
