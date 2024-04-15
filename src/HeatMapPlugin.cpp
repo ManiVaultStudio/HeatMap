@@ -12,7 +12,7 @@
 #include <QtDebug>
 #include <QWebEnginePage>
 
-Q_PLUGIN_METADATA(IID "nl.tudelft.HeatMapPlugin")
+Q_PLUGIN_METADATA(IID "studio.manivault.HeatMapPlugin")
 
 using namespace mv;
 using namespace mv::gui;
