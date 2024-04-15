@@ -23,7 +23,10 @@ using namespace mv::gui;
 
 HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
-    _dropWidget(nullptr)
+    _datasetsDeferredLoad(),
+    _deferredLoadTimer(),
+    _points(),
+    _clusters()
 {
     _heatmap = new HeatMapWidget();
     _dropWidget = new gui::DropWidget(_heatmap);
