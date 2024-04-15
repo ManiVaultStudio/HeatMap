@@ -8,9 +8,11 @@ Given a point and a corresponding cluster data set, this plugin shows a heatmap 
 git clone git@github.com:ManiVaultStudio/HeatMap.git
 ```
 
+To use the heatmap, first drag&drop a point data set into the view and afterwards drag&drop a cluster data set that is a child of the point data set into the view.
+
 <p align="middle">
   <img src="https://github.com/ManiVaultStudio/HeatMap/assets/58806453/87ae510c-083f-40e0-a04b-c357d2cab601" align="middle" width="75%" /> </br>
-  Heatmap representation of mean values per cluster and dimension of the <a href="https://archive.ics.uci.edu/dataset/53/iris">iris flower data</a>. On top, a dendrogram shows a hierarchical clustering of the manually created data clusters. 
+  Heatmap representation of mean values per cluster and dimension of the <a href="https://archive.ics.uci.edu/dataset/53/iris">iris flower data</a>. </br> On top, a dendrogram shows a hierarchical clustering of the manually created data clusters. 
   Cluster "Four" is selected.
 </p>
 
