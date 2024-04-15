@@ -1,9 +1,9 @@
 #pragma once
 
 #include "widgets/WebWidget.h"
-#include <QMouseEvent>
-#include <QComboBox>
+
 #include <QList>
+#include <QMouseEvent>
 #include <QVariant>
 
 class QWebEngineView;
