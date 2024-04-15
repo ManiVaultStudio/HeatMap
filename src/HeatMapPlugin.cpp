@@ -202,11 +202,11 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
     {
         Cluster& cluster = _clusters->getClusters()[i];
 
-        if (selectedClusters[i]) {
+        if (selectedClusters[i])
             pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            events().notifyDatasetDataSelectionChanged(_points);
-        }
     }
+
+    events().notifyDatasetDataSelectionChanged(_points);
 }
 
 void HeatMapPlugin::updateData()
