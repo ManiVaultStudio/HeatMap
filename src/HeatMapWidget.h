@@ -1,9 +1,9 @@
 #pragma once
 
 #include "widgets/WebWidget.h"
-#include <QMouseEvent>
-#include <QComboBox>
+
 #include <QList>
+#include <QMouseEvent>
 #include <QVariant>
 
 class QWebEngineView;
@@ -44,7 +44,7 @@ public:
     ~HeatMapWidget() override;
 
     void addDataOption(const QString option);
-    void setData(const QVector<Cluster>& data, std::vector<QString>& dimNames, const int numDimensions);
+    void setData(const QVector<Cluster>& data, const std::vector<QString>& dimNames, const std::vector<QString>& clusterNames, const int numDimensions);
 
 protected:
     void mousePressEvent(QMouseEvent *event)   Q_DECL_OVERRIDE;

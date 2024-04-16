@@ -1,14 +1,10 @@
 #include "HeatMapWidget.h"
 
 #include "ClusterData/ClusterData.h"
-#include "util/FileUtil.h"
-
-#include <QVBoxLayout>
 
 #include <cassert>
 
-HeatMapCommunicationObject::HeatMapCommunicationObject(HeatMapWidget* parent)
-    :
+HeatMapCommunicationObject::HeatMapCommunicationObject(HeatMapWidget* parent) :
     _parent(parent)
 {
 
@@ -31,7 +27,11 @@ void HeatMapCommunicationObject::js_highlightUpdated(int highlightId)
 
 
 HeatMapWidget::HeatMapWidget() :
-    loaded(false)
+    mv::gui::WebWidget(),
+    _communicationObject(nullptr),
+    loaded(false),
+    _numClusters(0),
+    dataOptionBuffer()
 {
     Q_INIT_RESOURCE(heatmap_resources);
     _communicationObject = new HeatMapCommunicationObject(this);
@@ -54,7 +54,7 @@ void HeatMapWidget::addDataOption(const QString option)
         dataOptionBuffer.append(option);
 }
 
-void HeatMapWidget::setData(const QVector<Cluster>& clusters, std::vector<QString>& dimNames, const int numDimensions)
+void HeatMapWidget::setData(const QVector<Cluster>& clusters, const std::vector<QString>& dimNames, const std::vector<QString>& clusterNames, const int numDimensions)
 {
     std::string _jsonObject = "";
 
@@ -64,8 +64,11 @@ void HeatMapWidget::setData(const QVector<Cluster>& clusters, std::vector<QStrin
     std::string nodes = "\"nodes\":[\n";
     for (int i = 0; i < _numClusters; i++)
     {
-        nodes = nodes + "{\"name\":\"" + "Cluster name " + std::to_string(i) + "\", ";
-        nodes = nodes + "\"size\":" + std::to_string(_numClusters) + ", ";
+        if(clusterNames.size() == _numClusters)
+            nodes = nodes + "{\"name\":\"" + clusterNames[i].toStdString() + "\", ";
+        else
+            nodes = nodes + "{\"name\":\"" + "Cluster name " + std::to_string(i) + "\", ";
+        nodes = nodes + "\"size\":" + std::to_string(clusters[i].getNumberOfIndices()) + ", ";
         nodes = nodes + "\"expression\":[";
 
         for (int j = 0; j < numDimensions; j++)
@@ -91,7 +94,7 @@ void HeatMapWidget::setData(const QVector<Cluster>& clusters, std::vector<QStrin
         if (dimNames.size() > i)
             names = names + "\"" + dimNames[i].toStdString() + "\"";
         else
-            names = names + "\"" + "markerName " + std::to_string(i) + "\"";
+            names = names + "\"" + "dimension " + std::to_string(i) + "\"";
 
         if (i < numDimensions - 1) names = names + ",";
         else names = names + "]";
