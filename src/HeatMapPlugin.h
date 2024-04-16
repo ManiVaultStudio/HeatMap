@@ -54,12 +54,12 @@ protected slots:
 private:
     void updateData();
 
-    mv::Datasets              _datasetsDeferredLoad;      /** Datasets cannot be loaded straight after the plugin is loaded because the web page needs to load first */
+    mv::Datasets                _datasetsDeferredLoad;      /** Datasets cannot be loaded straight after the plugin is loaded because the web page needs to load first */
     QTimer                      _deferredLoadTimer;         /** Wait for the web page to load before loading the datasets */
-    mv::Dataset<Points>       _points;                    /** Currently loaded points dataset */
-    mv::Dataset<Clusters>     _clusters;                  /** Currently loaded clusters dataset */
+    mv::Dataset<Points>         _points;                    /** Currently loaded points dataset */
+    mv::Dataset<Clusters>       _clusters;                  /** Currently loaded clusters dataset */
     HeatMapWidget*              _heatmap;                   /** Heatmap widget displaying cluster data */
-    mv::gui::DropWidget*      _dropWidget;                /** Widget allowing users to drop in data */
+    mv::gui::DropWidget*        _dropWidget;                /** Widget allowing users to drop in data */
 };
 
 // =============================================================================
@@ -70,7 +70,7 @@ class HeatMapPluginFactory : public ViewPluginFactory
 {
     Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "nl.tudelft.HeatMapPlugin"
+    Q_PLUGIN_METADATA(IID   "studio.manivault.HeatMapPlugin"
                       FILE  "HeatMapPlugin.json")
     
 public:

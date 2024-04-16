@@ -1,8 +1,10 @@
 #include "HeatMapPlugin.h"
 
-#include "PointData/PointData.h"
-#include "ClusterData/ClusterData.h"
-#include "event/Event.h"
+#include <DatasetsMimeData.h>
+#include <event/Event.h>
+
+#include <ClusterData/ClusterData.h>
+#include <PointData/PointData.h>
 
 #include <actions/PluginTriggerAction.h>
 
@@ -10,7 +12,7 @@
 #include <QtDebug>
 #include <QWebEnginePage>
 
-Q_PLUGIN_METADATA(IID "nl.tudelft.HeatMapPlugin")
+Q_PLUGIN_METADATA(IID "studio.manivault.HeatMapPlugin")
 
 using namespace mv;
 using namespace mv::gui;
@@ -21,7 +23,10 @@ using namespace mv::gui;
 
 HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
-    _dropWidget(nullptr)
+    _datasetsDeferredLoad(),
+    _deferredLoadTimer(),
+    _points(),
+    _clusters()
 {
     _heatmap = new HeatMapWidget();
     _dropWidget = new gui::DropWidget(_heatmap);
@@ -57,21 +62,25 @@ void HeatMapPlugin::init()
     _dropWidget->initialize([this](const QMimeData* mimeData) -> gui::DropWidget::DropRegions {
         gui::DropWidget::DropRegions dropRegions;
         
-        const auto mimeText = mimeData->text();
-        const auto tokens = mimeText.split("\n");
+        const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
 
-        if (tokens.count() == 1)
+        if (datasetsMimeData == nullptr)
             return dropRegions;
 
-        const auto datasetGuid = tokens[1];
-        const auto dataType    = DataType(tokens[2]);
+        if (datasetsMimeData->getDatasets().count() > 1)
+            return dropRegions;
+
+        const auto dataset  = datasetsMimeData->getDatasets().first();
+        const auto datasetGuiName = dataset->getGuiName();
+        const auto datasetId = dataset->getId();
+        const auto dataType = dataset->getDataType();
         const auto dataTypes   = DataTypes({ PointType, ClusterType });
 
         if (!dataTypes.contains(dataType))
             dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
 
         if (dataType == PointType) {
-            const auto candidateDataset = mv::data().getDataset<Points>(datasetGuid);
+            const auto candidateDataset = mv::data().getDataset<Points>(datasetId);
             const auto candidateDatasetName = candidateDataset->getGuiName();
             const auto description = QString("Visualize %1 as points or density/contour map").arg(candidateDatasetName);
 
@@ -100,7 +109,7 @@ void HeatMapPlugin::init()
         }
 
         if (dataType == ClusterType) {
-            const auto candidateDataset = mv::data().getDataset<Clusters>(datasetGuid);
+            const auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
             const auto description      = QString("Clusters points by %1").arg(candidateDataset->getGuiName());
 
             if (_points.isValid()) {
@@ -193,11 +202,11 @@ void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
     {
         Cluster& cluster = _clusters->getClusters()[i];
 
-        if (selectedClusters[i]) {
+        if (selectedClusters[i])
             pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-            events().notifyDatasetDataSelectionChanged(_points);
-        }
     }
+
+    events().notifyDatasetDataSelectionChanged(_points);
 }
 
 void HeatMapPlugin::updateData()
@@ -253,11 +262,13 @@ void HeatMapPlugin::updateData()
     }
 
     qDebug() << "Done calculating data";
-    std::vector<QString> names;
+    std::vector<QString> dimensionNames;
     if (source->getDimensionNames().size() == source->getNumDimensions())
-        names = source->getDimensionNames();
+        dimensionNames = source->getDimensionNames();
 
-    _heatmap->setData(_clusters->getClusters(), names, numDimensions);
+    std::vector<QString> clusterNames = _clusters->getClusterNames();
+
+    _heatmap->setData(_clusters->getClusters(), dimensionNames, clusterNames, numDimensions);
 }
 
 // =============================================================================
