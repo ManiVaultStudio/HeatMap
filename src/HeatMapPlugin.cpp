@@ -58,7 +58,7 @@ void HeatMapPlugin::init()
 {
     _heatmap->setPage(":/heatmap/heatmap.html", "qrc:/heatmap/");
 
-    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag an item from the data hierarchy and drop it here to visualize data..."));
+    _dropWidget->setDropIndicatorWidget(new gui::DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "First, drag a point data set and then a cluster data set from the data hierarchy here..."));
     _dropWidget->initialize([this](const QMimeData* mimeData) -> gui::DropWidget::DropRegions {
         gui::DropWidget::DropRegions dropRegions;
         
@@ -107,8 +107,7 @@ void HeatMapPlugin::init()
                 }
             }
         }
-
-        if (dataType == ClusterType) {
+        else if (dataType == ClusterType) {
             const auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
             const auto description      = QString("Clusters points by %1").arg(candidateDataset->getGuiName());
 
@@ -148,8 +147,11 @@ void HeatMapPlugin::init()
         updateData();
     });
 
-    connect(_heatmap, SIGNAL(clusterSelectionChanged(QList<int>)), SLOT(clusterSelected(QList<int>)));
-    connect(_heatmap, SIGNAL(dataSetPicked(QString)), SLOT(dataSetPicked(QString)));
+    // Load clusters when the dataset name of the clusters dataset reference changes
+    connect(&_clusters, &Dataset<Clusters>::dataSelectionChanged, this, &HeatMapPlugin::selectClusters);
+
+    connect(_heatmap, &HeatMapWidget::clusterSelectionChanged, this, &HeatMapPlugin::clusterSelected);
+    connect(_heatmap, &HeatMapWidget::dataSetPicked, this, &HeatMapPlugin::dataSetPicked);
 
     // Add widgets to plugin layout
     auto layout = new QVBoxLayout();
@@ -167,6 +169,7 @@ void HeatMapPlugin::loadData(const mv::Datasets& datasets)
     _deferredLoadTimer.start();
 }
 
+// TODO: remove this, it is not connected and does nothing
 void HeatMapPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 {
     // Event which gets triggered when a dataset is added to the system.
@@ -183,30 +186,24 @@ void HeatMapPlugin::onDataEvent(mv::DatasetEvent* dataEvent)
 
 void HeatMapPlugin::dataSetPicked(const QString& name)
 {
-    qDebug() << "DATA PICKED IN HEATMAP";
     updateData();
 }
 
-void HeatMapPlugin::clusterSelected(QList<int> selectedClusters)
+void HeatMapPlugin::clusterSelected(const std::vector<std::uint32_t>& selectedClusters)
 {
-    qDebug() << "CLUSTER SELECTION";
-    qDebug() << selectedClusters;
-    
-    auto pointSelection = _points->getSelection<Points>();
-    auto selection      = _clusters->getSelection<Clusters>();
+    _clusters->setSelectionIndices(selectedClusters);
+    events().notifyDatasetDataSelectionChanged(_clusters);
+}
 
-    pointSelection->indices.clear();
+void HeatMapPlugin::selectClusters()
+{
+    const auto& selectionIndices = _clusters->getSelectionIndices();
 
-    int numClusters = _clusters->getClusters().size();
-    for (int i = 0; i < numClusters; i++)
-    {
-        Cluster& cluster = _clusters->getClusters()[i];
+    QList<int> selection(_clusters->getClusters().size(), 0);
+    for (const auto& selectionIndex : selectionIndices)
+        selection[selectionIndex] = 1;
 
-        if (selectedClusters[i])
-            pointSelection->indices.insert(pointSelection->indices.end(), cluster.getIndices().begin(), cluster.getIndices().end());
-    }
-
-    events().notifyDatasetDataSelectionChanged(_points);
+    _heatmap->setSelection(selection);
 }
 
 void HeatMapPlugin::updateData()

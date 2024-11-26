@@ -210,14 +210,10 @@ function initHeatMapLayout() {
 			.attr("fill", _bgcolor)
 			.attr("x", 0)
 			.attr("y", 0)
-            .on("mouseover", function (d, i) {hoverColumn(d.column); })
-            .on("mouseout", function (d, i) {leaveColumn(d.column); })
             .on("click", function (d, i) {leftClickColumn(d.column); });
     
 	_cellPaint = _cells.append("rect")
 			.attr("class", "cellPaint")
-            .on("mouseover", function (d, i) {hoverColumn(d.column); })
-            .on("mouseout", function (d, i) {leaveColumn(d.column); })
             .on("click", function (d, i) { leftClickColumn(d.column); });
 
 	_columnLabelsGroup = _columns.append("g")
@@ -645,30 +641,6 @@ function leftClickColumn(idx) {
     drawSelectionHighlights(500);
 }
 
-function hoverColumn(idx) {
-    
-    if (isQtAvailable) { QtBridge.js_highlightUpdated(idx); }
-
-    return;
-
-    _highlight = idx;
-    
-	drawColumns(250);
-    drawSelectionHighlights(250);
-}
-
-function leaveColumn(idx) {
-    
-    if (isQtAvailable) { QtBridge.js_highlightUpdated(idx); }
-
-    return;
-
-    _highlight = -1;
-    
-	drawColumns(250);
-    drawSelectionHighlights(250);
-}
-
 function leftClickMarkerLabel(index, switchOrder) {
 
 	updateSorting(index, switchOrder);
@@ -1058,6 +1030,7 @@ function setData(d) {
     log("setting data");
 
     _dataQueue.addData(d);
+    resize();
 
     log("Data set.");
 }

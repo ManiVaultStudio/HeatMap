@@ -15,16 +15,10 @@ void HeatMapCommunicationObject::js_selectData(QString text)
     _parent->js_selectData(text);
 }
 
-void HeatMapCommunicationObject::js_selectionUpdated(QVariant selectedClusters)
+void HeatMapCommunicationObject::js_selectionUpdated(const QVariantList& selectedClusters)
 {
     _parent->js_selectionUpdated(selectedClusters);
 }
-
-void HeatMapCommunicationObject::js_highlightUpdated(int highlightId)
-{
-    _parent->js_highlightUpdated(highlightId);
-}
-
 
 HeatMapWidget::HeatMapWidget() :
     mv::gui::WebWidget(),
@@ -46,6 +40,7 @@ HeatMapWidget::~HeatMapWidget()
 
 }
 
+// TODO: remove this, it is not connected and does nothing
 void HeatMapWidget::addDataOption(const QString option)
 {
     if (loaded)
@@ -107,6 +102,11 @@ void HeatMapWidget::setData(const QVector<Cluster>& clusters, const std::vector<
     emit _communicationObject->qt_setData(QString(_jsonObject.c_str()));
 }
 
+void HeatMapWidget::setSelection(QList<int> selection)
+{
+    emit _communicationObject->qt_setSelection(selection);
+}
+
 void HeatMapWidget::mousePressEvent(QMouseEvent *event)
 {
     // UNUSED
@@ -142,33 +142,17 @@ void HeatMapWidget::initWebPage()
     dataOptionBuffer.clear();
 }
 
-void HeatMapWidget::js_selectData(QString name)
+void HeatMapWidget::js_selectData(const QString& name)
 {
     emit dataSetPicked(name);
 }
 
-void HeatMapWidget::js_highlightUpdated(int highlightId)
+void HeatMapWidget::js_selectionUpdated(const QVariantList& selectedClusters)
 {
-    QList<int> selectedClusters;
-
-    for (int i = 0; i < _numClusters; i++) {
-        selectedClusters.append(i == highlightId ? 1 : 0);
-    }
-
-    selectedClusters.append(highlightId);
-
-    //emit clusterSelectionChanged(selectedClusters);
-}
-
-void HeatMapWidget::js_selectionUpdated(QVariant selectedClusters)
-{
-    QList<QVariant> selectedClustersList = selectedClusters.toList();
-
-    QList<int> selectedIndices;
-    for (const QVariant& variant : selectedClustersList)
-    {
-        selectedIndices.push_back(variant.toInt());
-    }
+    std::vector<std::uint32_t> selectedIndices;
+    for (std::uint32_t i = 0; i < selectedClusters.size(); ++i)
+        if(selectedClusters[i].toInt() > 0)
+            selectedIndices.push_back(i);
 
     emit clusterSelectionChanged(selectedIndices);
 }

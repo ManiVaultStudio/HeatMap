@@ -45,11 +45,13 @@ public:
      */
     void loadData(const mv::Datasets& datasets) override;
 
+    // TODO: remove this, it is not connected and does nothing
     void onDataEvent(mv::DatasetEvent* dataEvent);
     
 protected slots:
     void dataSetPicked(const QString& name);
-    void clusterSelected(QList<int> selectedClusters);
+    void clusterSelected(const std::vector<std::uint32_t>& selectedClusters);
+    void selectClusters();
 
 private:
     void updateData();
