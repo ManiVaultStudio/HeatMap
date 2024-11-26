@@ -10,17 +10,15 @@ class HeatMapConan(ConanFile):
     """Class to package HeatMap plugin using conan
 
     Packages both RELEASE and DEBUG.
-    Uses rules_support (github.com/hdps/rulessupport) to derive
+    Uses rules_support (github.com/ManiVaultStudio/rulessupport) to derive
     versioninfo based on the branch naming convention
-    as described in https://github.com/hdps/core/wiki/Branch-naming-rules
+    as described in https://github.com/ManiVaultStudio/core/wiki/Branch-naming-rules
     """
 
     name = "Heatmap"
-    description = (
-        "A plugin for data heat-maps in ManiVault."
-    )
+    description = ("A plugin for data heat-maps in ManiVault.")
     topics = ("hdps", "ManiVault", "plugin", "heatmap", "data visualization")
-    url = "https://github.com/hdps/HeatMap"
+    url = "https://github.com/ManiVaultStudio/HeatMap"
     author = "B. van Lew b.van_lew@lumc.nl"  # conan recipe author
     license = "MIT"
 
