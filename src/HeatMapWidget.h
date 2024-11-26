@@ -2,6 +2,8 @@
 
 #include "widgets/WebWidget.h"
 
+#include <cstdint>
+
 #include <QList>
 #include <QMouseEvent>
 #include <QVariant>
@@ -29,8 +31,7 @@ signals:
 
 public slots:
     void js_selectData(QString text);
-    void js_selectionUpdated(QVariant selectedClusters);
-    void js_highlightUpdated(int highlightId);
+    void js_selectionUpdated(const QVariantList& selectedClusters);
 
 private:
     HeatMapWidget* _parent;
@@ -45,6 +46,7 @@ public:
 
     void addDataOption(const QString option);
     void setData(const QVector<Cluster>& data, const std::vector<QString>& dimNames, const std::vector<QString>& clusterNames, const int numDimensions);
+    void setSelection(QList<int> selection);
 
 protected:
     void mousePressEvent(QMouseEvent *event)   Q_DECL_OVERRIDE;
@@ -55,13 +57,12 @@ protected:
     void cleanup();
 
 signals:
-    void clusterSelectionChanged(QList<int> selectedClusters);
-    void dataSetPicked(QString name);
+    void clusterSelectionChanged(const std::vector<std::uint32_t>& selectedClusters);
+    void dataSetPicked(const QString& name);
 
 public:
-    void js_selectData(QString text);
-    void js_selectionUpdated(QVariant selectedClusters);
-    void js_highlightUpdated(int highlightId);
+    void js_selectData(const QString& text);
+    void js_selectionUpdated(const QVariantList& selectedClusters);
 
 private slots:
     void initWebPage() override;
