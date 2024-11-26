@@ -19,4 +19,4 @@ To use the heatmap, first drag&drop a point data set into the view and afterward
 ## Features
 - Resize each tile wrt to the standard deviation of the respective dimension values in a cluster
 - Hierarchical clustering (using euclidean distance) with [clusterfck](https://github.com/harthur/clustering)
-- Adjust the min and max values of the color map (via a menu accesible from the arrow the bottom), and change the colormap itself (via clicking the colormap)
+- Adjust the min and max values of the color map (via a menu accessible from the arrow the bottom), and change the colormap itself (via clicking the colormap)
