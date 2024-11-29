@@ -145,6 +145,11 @@ void HeatMapPlugin::init()
         //loadPoints(newDatasetName);
         updateWindowTitle();
         updateData();
+        });
+
+    // Load clusters when the dataset name of the clusters dataset reference changes
+    connect(&_clusters, &Dataset<Clusters>::dataChanged, this, [this, updateWindowTitle]() {
+        updateData();
     });
 
     // Load clusters when the dataset name of the clusters dataset reference changes
