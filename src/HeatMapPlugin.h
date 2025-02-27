@@ -76,16 +76,10 @@ class HeatMapPluginFactory : public ViewPluginFactory
                       FILE  "HeatMapPlugin.json")
     
 public:
-    HeatMapPluginFactory(void) {}
-    ~HeatMapPluginFactory(void) override {}
+    HeatMapPluginFactory();
 
-    /**
-     * Get plugin icon
-     * @param color Icon color for flat (font) icons
-     * @return Icon
-     */
-    QIcon getIcon(const QColor& color = Qt::black) const override;
-    
+    ~HeatMapPluginFactory() override {}
+
     ViewPlugin* produce() override;
 
     mv::DataTypes supportedDataTypes() const override;

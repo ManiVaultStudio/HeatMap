@@ -277,10 +277,8 @@ void HeatMapPlugin::updateData()
 // Factory
 // =============================================================================
 
-QIcon HeatMapPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
-{
-    return Application::getIconFont("FontAwesome").getIcon("burn", color);
-}
+HeatMapPluginFactory::HeatMapPluginFactory()
+{}
 
 ViewPlugin* HeatMapPluginFactory::produce()
 {
