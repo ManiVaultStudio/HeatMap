@@ -278,7 +278,9 @@ void HeatMapPlugin::updateData()
 // =============================================================================
 
 HeatMapPluginFactory::HeatMapPluginFactory()
-{}
+{
+    setIconByName("burn");
+}
 
 ViewPlugin* HeatMapPluginFactory::produce()
 {
