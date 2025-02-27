@@ -304,7 +304,7 @@ PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const mv::Dat
 	const auto numberOfDatasets = datasets.count();
 
 	if (numberOfDatasets == 2 && datasets[0]->getDataType() == PointType && datasets[1]->getDataType() == ClusterType) {
-		auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+		auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", icon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             getPluginInstance()->loadData(datasets);
         });
 
@@ -313,7 +313,7 @@ PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const mv::Dat
     else {
 		if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
 			if (numberOfDatasets >= 1) {
-				auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+				auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", icon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
 					for (auto dataset : datasets)
 						getPluginInstance()->loadData({ dataset });
                 });
