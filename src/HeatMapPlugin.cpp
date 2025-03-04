@@ -12,6 +12,8 @@
 #include <QtDebug>
 #include <QWebEnginePage>
 
+#include <cmath>
+
 Q_PLUGIN_METADATA(IID "studio.manivault.HeatMapPlugin")
 
 using namespace mv;
@@ -216,26 +218,53 @@ void HeatMapPlugin::updateData()
     if (!_points.isValid() || !_clusters.isValid())
         return;
 
-    auto source = _points->getSourceDataset<Points>();
+    const auto source = _points->getSourceDataset<Points>();
 
-    qDebug() << "Working on data: " << _clusters->getGuiName();
-    
-    qDebug() << "Calculating data";
+    const int numDimensions = source->getNumDimensions();
+    const int numPoints = source->getNumPoints();
+    QVector<Cluster>& clusters = _clusters->getClusters();  // NOT const
+    const int numClusters = clusters.size();
 
-    int numClusters = _clusters->getClusters().size();
-    int numDimensions = 1;
+    const bool sourceIsProxy = source->isProxy();
 
-    qDebug() << "Initialize clusters" << numClusters;
+    std::vector<float> groupedValues;
+    groupedValues.resize(static_cast<size_t>(numDimensions) * numPoints);
+
+    if (sourceIsProxy) {
+        std::vector<float> dimValues;
+
+        for (int dim = 0; dim < numDimensions; dim++) {
+            source->extractDataForDimension(dimValues, dim);
+
+            for (size_t i = 0; i < numPoints; ++i) {
+                groupedValues[i * dim] = dimValues[i];
+            }
+        }
+    }
+
+    auto getSourceValue = [&source, &groupedValues, sourceIsProxy](int index, int numDimensions, int d) -> float {
+        const size_t pos = static_cast<size_t>(index) * numDimensions + d;
+        if (sourceIsProxy)
+            return groupedValues[pos];
+        else
+            return source->getValueAt(pos);
+        };
+
+    qDebug() << "Heatmap: Calculating data...";
+
+    qDebug() << "Point data: " << source->getGuiName();
+    qDebug() << "Point data: " << _clusters->getGuiName();
+    qDebug() << "Num dimensions: " << numDimensions;
+    qDebug() << "Num clusters: " << numClusters;
+
     // For every cluster initialize the median, mean, and stddev vectors with the number of dimensions
     for (int i = 0; i < numClusters; i++) {
-        Cluster& cluster = _clusters->getClusters()[i];
-                
-        numDimensions = source->getNumDimensions();
-        qDebug() << "Num dimensions: " << numDimensions;
+        Cluster& cluster = clusters[i];
 
         // Cluster statistics
         auto& means = cluster.getMean();
         auto& stddevs = cluster.getStandardDeviation();
+        auto& indices = cluster.getIndices();
 
         means.resize(numDimensions);
         stddevs.resize(numDimensions);
@@ -245,32 +274,31 @@ void HeatMapPlugin::updateData()
             // Mean calculation
             float mean = 0;
 
-            for (int index : cluster.getIndices())
-                mean += source->getValueAt(index * numDimensions + d);
+            for (int index : indices)
+                mean += getSourceValue(index, numDimensions, d);
 
-            mean /= cluster.getIndices().size();
+            mean /= indices.size();
 
             // Standard deviation calculation
             float variance = 0;
 
-            for (int index : cluster.getIndices())
-                variance += pow(source->getValueAt(index * numDimensions + d) - mean, 2);
+            for (int index : indices)
+                variance += pow(getSourceValue(index, numDimensions, d) - mean, 2);
 
-            float stddev = sqrt(variance / cluster.getIndices().size());
+            float stddev = sqrt(variance / indices.size());
 
             means[d] = mean;
             stddevs[d] = stddev;
         }
     }
 
-    qDebug() << "Done calculating data";
+    qDebug() << "Done calculating data.";
     std::vector<QString> dimensionNames;
-    if (source->getDimensionNames().size() == source->getNumDimensions())
+    if (source->getDimensionNames().size() == numDimensions)
         dimensionNames = source->getDimensionNames();
 
-    std::vector<QString> clusterNames = _clusters->getClusterNames();
-
-    _heatmap->setData(_clusters->getClusters(), dimensionNames, clusterNames, numDimensions);
+    const std::vector<QString> clusterNames = _clusters->getClusterNames();
+    _heatmap->setData(clusters, dimensionNames, clusterNames, numDimensions);
 }
 
 // =============================================================================
