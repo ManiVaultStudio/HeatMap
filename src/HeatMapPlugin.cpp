@@ -307,8 +307,9 @@ void HeatMapPlugin::fromVariantMap(const QVariantMap& variantMap)
 
     // Load data sets (only if both points and clusters are available)
     if (variantMap.contains("inputPointsGUID") && variantMap.contains("inputClustersGUID")) {
-        _points   = mv::data().getDataset(variantMap["inputPointsGUID"].toString());
-        _clusters = mv::data().getDataset(variantMap["inputClustersGUID"].toString());
+        auto points   = mv::data().getDataset(variantMap["inputPointsGUID"].toString());
+        auto clusters = mv::data().getDataset(variantMap["inputClustersGUID"].toString());
+        loadData({ points , clusters });
     }
 }
 
