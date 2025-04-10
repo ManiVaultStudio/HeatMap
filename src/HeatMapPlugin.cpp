@@ -30,7 +30,7 @@ HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
     _points(),
     _clusters()
 {
-    _heatmap = new HeatMapWidget();
+    _heatmap    = new HeatMapWidget();
     _dropWidget = new gui::DropWidget(_heatmap);
 
     _deferredLoadTimer.setInterval(250);
@@ -72,11 +72,11 @@ void HeatMapPlugin::init()
         if (datasetsMimeData->getDatasets().count() > 1)
             return dropRegions;
 
-        const auto dataset  = datasetsMimeData->getDatasets().first();
+        const auto& dataset       = datasetsMimeData->getDatasets().first();
         const auto datasetGuiName = dataset->getGuiName();
-        const auto datasetId = dataset->getId();
-        const auto dataType = dataset->getDataType();
-        const auto dataTypes   = DataTypes({ PointType, ClusterType });
+        const auto datasetId      = dataset->getId();
+        const auto dataType       = dataset->getDataType();
+        const auto dataTypes      = DataTypes({ PointType, ClusterType });
 
         if (!dataTypes.contains(dataType))
             dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
@@ -368,7 +368,7 @@ PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const mv::Dat
 		if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
 			if (numberOfDatasets >= 1) {
 				auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", icon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
-					for (auto dataset : datasets)
+					for (const auto& dataset : datasets)
 						getPluginInstance()->loadData({ dataset });
                 });
 
