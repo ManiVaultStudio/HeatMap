@@ -301,6 +301,30 @@ void HeatMapPlugin::updateData()
     _heatmap->setData(clusters, dimensionNames, clusterNames, numDimensions);
 }
 
+void HeatMapPlugin::fromVariantMap(const QVariantMap& variantMap)
+{
+    ViewPlugin::fromVariantMap(variantMap);
+
+    // Load data sets (only if both points and clusters are available)
+    if (variantMap.contains("inputPointsGUID") && variantMap.contains("inputClustersGUID")) {
+        _points   = mv::data().getDataset(variantMap["inputPointsGUID"].toString());
+        _clusters = mv::data().getDataset(variantMap["inputClustersGUID"].toString());
+    }
+}
+
+QVariantMap HeatMapPlugin::toVariantMap() const
+{
+    QVariantMap variantMap = ViewPlugin::toVariantMap();
+
+    // Save data sets (only if both points and clusters are available)
+    if (_points.isValid() && _clusters.isValid()) {
+        variantMap["inputPointsGUID"]   = QVariant::fromValue(_points.get<Points>()->getId());
+        variantMap["inputClustersGUID"] = QVariant::fromValue(_clusters.get<Points>()->getId());
+    }
+
+    return variantMap;
+}
+
 // =============================================================================
 // Factory
 // =============================================================================

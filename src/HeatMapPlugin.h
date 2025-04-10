@@ -48,6 +48,20 @@ public:
     // TODO: remove this, it is not connected and does nothing
     void onDataEvent(mv::DatasetEvent* dataEvent);
     
+public: // Serialization
+
+    /**
+     * Load plugin from variant map
+     * @param Variant map representation of the plugin
+     */
+    void fromVariantMap(const QVariantMap& variantMap) override;
+
+    /**
+     * Save plugin to variant map
+     * @return Variant map representation of the plugin
+     */
+    QVariantMap toVariantMap() const override;
+
 protected slots:
     void dataSetPicked(const QString& name);
     void clusterSelected(const std::vector<std::uint32_t>& selectedClusters);
