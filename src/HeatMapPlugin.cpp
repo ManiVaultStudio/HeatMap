@@ -320,7 +320,7 @@ QVariantMap HeatMapPlugin::toVariantMap() const
     // Save data sets (only if both points and clusters are available)
     if (_points.isValid() && _clusters.isValid()) {
         variantMap["inputPointsGUID"]   = QVariant::fromValue(_points.get<Points>()->getId());
-        variantMap["inputClustersGUID"] = QVariant::fromValue(_clusters.get<Points>()->getId());
+        variantMap["inputClustersGUID"] = QVariant::fromValue(_clusters.get<Clusters>()->getId());
     }
 
     return variantMap;
