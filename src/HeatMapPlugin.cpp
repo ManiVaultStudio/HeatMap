@@ -28,7 +28,9 @@ HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
     _datasetsDeferredLoad(),
     _deferredLoadTimer(),
     _points(),
-    _clusters()
+    _clusters(),
+    _pointsPickerAction(this, "Points"),
+    _clustersPickerAction(this, "Clusters")
 {
     _heatmap    = new HeatMapWidget();
     _dropWidget = new gui::DropWidget(_heatmap);
@@ -44,16 +46,27 @@ HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
 		if (_datasetsDeferredLoad.count() >= 1 && _datasetsDeferredLoad.first()->getDataType() != PointType)
 			return;
 
-		_points = Dataset<Points>(_datasetsDeferredLoad.first());
+        setPointsData(Dataset<Points>(_datasetsDeferredLoad.first()));
 
-		if (_datasetsDeferredLoad.count() == 2 && _datasetsDeferredLoad[1]()->getDataType() == ClusterType)
-			_clusters = Dataset<Clusters>(_datasetsDeferredLoad[1]);
+        if (_datasetsDeferredLoad.count() == 2 && _datasetsDeferredLoad[1]()->getDataType() == ClusterType) {
+            setClustersData(Dataset<Clusters>(_datasetsDeferredLoad[1]));
+        }
     });
 }
 
 HeatMapPlugin::~HeatMapPlugin(void)
 {
     
+}
+
+void HeatMapPlugin::setPointsData(const mv::Dataset<Points>& p) {
+    _points = p;
+    _pointsPickerAction.setCurrentDataset(_points);
+}
+
+void HeatMapPlugin::setClustersData(const mv::Dataset<Clusters>& c) {
+    _clusters = c;
+    _clustersPickerAction.setCurrentDataset(_clusters);
 }
 
 void HeatMapPlugin::init()
@@ -88,7 +101,7 @@ void HeatMapPlugin::init()
 
             if (!_points.isValid()) {
                 dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                    _points = candidateDataset;
+                    setPointsData(candidateDataset);
                 });
             }
             else {
@@ -98,12 +111,12 @@ void HeatMapPlugin::init()
                 else {
                     if (_points->getNumPoints() != candidateDataset->getNumPoints()) {
                         dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                            _points = candidateDataset;
+                            setPointsData(candidateDataset);
                         });
                     }
                     else {
                         dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                            _points = candidateDataset;
+                            setPointsData(candidateDataset);
                         });
                     }
                 }
@@ -119,7 +132,7 @@ void HeatMapPlugin::init()
                 }
                 else {
                     dropRegions << new gui::DropWidget::DropRegion(this, "Clusters", description, "th-large", true, [this, candidateDataset]() {
-                        _clusters = candidateDataset;
+                        setClustersData(candidateDataset);
                     });
                 }
             }
@@ -305,10 +318,13 @@ void HeatMapPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
     ViewPlugin::fromVariantMap(variantMap);
 
+    _pointsPickerAction.fromParentVariantMap(variantMap);
+    _clustersPickerAction.fromParentVariantMap(variantMap);
+
     // Load data sets (only if both points and clusters are available)
-    if (variantMap.contains("inputPointsGUID") && variantMap.contains("inputClustersGUID")) {
-        auto points   = mv::data().getDataset(variantMap["inputPointsGUID"].toString());
-        auto clusters = mv::data().getDataset(variantMap["inputClustersGUID"].toString());
+    if (_pointsPickerAction.hasSelection() && _clustersPickerAction.hasSelection()) {
+        auto points = _pointsPickerAction.getCurrentDataset();
+        auto clusters = _clustersPickerAction.getCurrentDataset();
         loadData({ points , clusters });
     }
 }
@@ -319,8 +335,8 @@ QVariantMap HeatMapPlugin::toVariantMap() const
 
     // Save data sets (only if both points and clusters are available)
     if (_points.isValid() && _clusters.isValid()) {
-        variantMap["inputPointsGUID"]   = QVariant::fromValue(_points.get<Points>()->getId());
-        variantMap["inputClustersGUID"] = QVariant::fromValue(_clusters.get<Clusters>()->getId());
+        _pointsPickerAction.insertIntoVariantMap(variantMap);
+        _clustersPickerAction.insertIntoVariantMap(variantMap);
     }
 
     return variantMap;
