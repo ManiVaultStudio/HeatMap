@@ -1,11 +1,12 @@
 #pragma once
 
+#include "HeatMapWidget.h"
+
+#include <Dataset.h>
 #include <ViewPlugin.h>
 
-#include "Dataset.h"
-
-#include "HeatMapWidget.h"
-#include "widgets/DropWidget.h"
+#include <actions/DatasetPickerAction.h>
+#include <widgets/DropWidget.h>
 
 #include <QList>
 #include <QTimer>
@@ -48,6 +49,24 @@ public:
     // TODO: remove this, it is not connected and does nothing
     void onDataEvent(mv::DatasetEvent* dataEvent);
     
+private:
+    void setPointsData(const mv::Dataset<Points>& p);
+    void setClustersData(const mv::Dataset<Clusters>& c);
+
+public: // Serialization
+
+    /**
+     * Load plugin from variant map
+     * @param Variant map representation of the plugin
+     */
+    void fromVariantMap(const QVariantMap& variantMap) override;
+
+    /**
+     * Save plugin to variant map
+     * @return Variant map representation of the plugin
+     */
+    QVariantMap toVariantMap() const override;
+
 protected slots:
     void dataSetPicked(const QString& name);
     void clusterSelected(const std::vector<std::uint32_t>& selectedClusters);
@@ -62,6 +81,9 @@ private:
     mv::Dataset<Clusters>       _clusters;                  /** Currently loaded clusters dataset */
     HeatMapWidget*              _heatmap;                   /** Heatmap widget displaying cluster data */
     mv::gui::DropWidget*        _dropWidget;                /** Widget allowing users to drop in data */
+
+    mv::gui::DatasetPickerAction    _pointsPickerAction;    /** For serializing the points data */
+    mv::gui::DatasetPickerAction    _clustersPickerAction;  /** For serializing the clusters data */
 };
 
 // =============================================================================

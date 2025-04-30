@@ -28,9 +28,11 @@ HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
     _datasetsDeferredLoad(),
     _deferredLoadTimer(),
     _points(),
-    _clusters()
+    _clusters(),
+    _pointsPickerAction(this, "Points"),
+    _clustersPickerAction(this, "Clusters")
 {
-    _heatmap = new HeatMapWidget();
+    _heatmap    = new HeatMapWidget();
     _dropWidget = new gui::DropWidget(_heatmap);
 
     _deferredLoadTimer.setInterval(250);
@@ -44,16 +46,27 @@ HeatMapPlugin::HeatMapPlugin(const PluginFactory* factory) :
 		if (_datasetsDeferredLoad.count() >= 1 && _datasetsDeferredLoad.first()->getDataType() != PointType)
 			return;
 
-		_points = Dataset<Points>(_datasetsDeferredLoad.first());
+        setPointsData(Dataset<Points>(_datasetsDeferredLoad.first()));
 
-		if (_datasetsDeferredLoad.count() == 2 && _datasetsDeferredLoad[1]()->getDataType() == ClusterType)
-			_clusters = Dataset<Clusters>(_datasetsDeferredLoad[1]);
+        if (_datasetsDeferredLoad.count() == 2 && _datasetsDeferredLoad[1]()->getDataType() == ClusterType) {
+            setClustersData(Dataset<Clusters>(_datasetsDeferredLoad[1]));
+        }
     });
 }
 
 HeatMapPlugin::~HeatMapPlugin(void)
 {
     
+}
+
+void HeatMapPlugin::setPointsData(const mv::Dataset<Points>& p) {
+    _points = p;
+    _pointsPickerAction.setCurrentDataset(_points);
+}
+
+void HeatMapPlugin::setClustersData(const mv::Dataset<Clusters>& c) {
+    _clusters = c;
+    _clustersPickerAction.setCurrentDataset(_clusters);
 }
 
 void HeatMapPlugin::init()
@@ -72,11 +85,11 @@ void HeatMapPlugin::init()
         if (datasetsMimeData->getDatasets().count() > 1)
             return dropRegions;
 
-        const auto dataset  = datasetsMimeData->getDatasets().first();
+        const auto& dataset       = datasetsMimeData->getDatasets().first();
         const auto datasetGuiName = dataset->getGuiName();
-        const auto datasetId = dataset->getId();
-        const auto dataType = dataset->getDataType();
-        const auto dataTypes   = DataTypes({ PointType, ClusterType });
+        const auto datasetId      = dataset->getId();
+        const auto dataType       = dataset->getDataType();
+        const auto dataTypes      = DataTypes({ PointType, ClusterType });
 
         if (!dataTypes.contains(dataType))
             dropRegions << new gui::DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
@@ -88,7 +101,7 @@ void HeatMapPlugin::init()
 
             if (!_points.isValid()) {
                 dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                    _points = candidateDataset;
+                    setPointsData(candidateDataset);
                 });
             }
             else {
@@ -98,12 +111,12 @@ void HeatMapPlugin::init()
                 else {
                     if (_points->getNumPoints() != candidateDataset->getNumPoints()) {
                         dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                            _points = candidateDataset;
+                            setPointsData(candidateDataset);
                         });
                     }
                     else {
                         dropRegions << new gui::DropWidget::DropRegion(this, "Position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                            _points = candidateDataset;
+                            setPointsData(candidateDataset);
                         });
                     }
                 }
@@ -119,7 +132,7 @@ void HeatMapPlugin::init()
                 }
                 else {
                     dropRegions << new gui::DropWidget::DropRegion(this, "Clusters", description, "th-large", true, [this, candidateDataset]() {
-                        _clusters = candidateDataset;
+                        setClustersData(candidateDataset);
                     });
                 }
             }
@@ -301,6 +314,34 @@ void HeatMapPlugin::updateData()
     _heatmap->setData(clusters, dimensionNames, clusterNames, numDimensions);
 }
 
+void HeatMapPlugin::fromVariantMap(const QVariantMap& variantMap)
+{
+    ViewPlugin::fromVariantMap(variantMap);
+
+    _pointsPickerAction.fromParentVariantMap(variantMap);
+    _clustersPickerAction.fromParentVariantMap(variantMap);
+
+    // Load data sets (only if both points and clusters are available)
+    if (_pointsPickerAction.hasSelection() && _clustersPickerAction.hasSelection()) {
+        auto points = _pointsPickerAction.getCurrentDataset();
+        auto clusters = _clustersPickerAction.getCurrentDataset();
+        loadData({ points , clusters });
+    }
+}
+
+QVariantMap HeatMapPlugin::toVariantMap() const
+{
+    QVariantMap variantMap = ViewPlugin::toVariantMap();
+
+    // Save data sets (only if both points and clusters are available)
+    if (_points.isValid() && _clusters.isValid()) {
+        _pointsPickerAction.insertIntoVariantMap(variantMap);
+        _clustersPickerAction.insertIntoVariantMap(variantMap);
+    }
+
+    return variantMap;
+}
+
 // =============================================================================
 // Factory
 // =============================================================================
@@ -344,7 +385,7 @@ PluginTriggerActions HeatMapPluginFactory::getPluginTriggerActions(const mv::Dat
 		if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
 			if (numberOfDatasets >= 1) {
 				auto pluginTriggerAction = new PluginTriggerAction(const_cast<HeatMapPluginFactory*>(this), this, "Heatmap", "View clusters in heatmap", icon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
-					for (auto dataset : datasets)
+					for (const auto& dataset : datasets)
 						getPluginInstance()->loadData({ dataset });
                 });
 
