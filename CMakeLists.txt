@@ -35,14 +35,18 @@ set(SOURCES
     src/HeatMapPlugin.cpp
     src/HeatMapWidget.h
     src/HeatMapWidget.cpp
-    src/HeatMapPlugin.json
 )
 
-set (RESOURCES
+set(PLUGININFO
+    PluginInfo.json
+)
+
+set(AUX
     res/heatmap_resources.qrc
 )
 
 source_group( Plugin FILES ${SOURCES})
+source_group( Aux  FILES ${PLUGININFO})
 source_group( Resources FILES ${RESOURCES})
 source_group( Resources\\generated FILES ${CMAKE_CURRENT_BINARY_DIR}/qrc_heatmap_resources.cpp)
 
@@ -51,7 +55,7 @@ qt6_add_resources(RESOURCE_FILES res/heatmap_resources.qrc)
 # -----------------------------------------------------------------------------
 # CMake Target
 # -----------------------------------------------------------------------------
-add_library(${PROJECT} SHARED ${SOURCES} ${RESOURCES} ${RESOURCE_FILES})
+add_library(${PROJECT} SHARED ${SOURCES} ${RESOURCES} ${RESOURCE_FILES} ${PLUGININFO})
 
 # -----------------------------------------------------------------------------
 # Target include directories
@@ -89,10 +93,7 @@ add_custom_command(TARGET ${PROJECT} POST_BUILD
 	--prefix ${ManiVault_INSTALL_DIR}/$<CONFIGURATION>
 )
 
-set_target_properties(${PROJECT}
-    PROPERTIES
-    FOLDER ViewPlugins
-)
+mv_handle_plugin_config(${PROJECT})
 
 # -----------------------------------------------------------------------------
 # Miscellaneous
