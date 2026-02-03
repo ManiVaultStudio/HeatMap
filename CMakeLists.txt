@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 3.22)
 # HeatMap Viewer Plugin
 # -----------------------------------------------------------------------------
 set(PROJECT "HeatMapPlugin")
-PROJECT(${PROJECT})
+PROJECT(${PROJECT}
+        DESCRIPTION "Heatmap view plugin for ManiVault"
+        LANGUAGES CXX
+)
 
 # -----------------------------------------------------------------------------
 # CMake Options
